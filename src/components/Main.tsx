@@ -21,7 +21,7 @@ const Main = () => {
         {/* Image Column */}
         <div className="flex-1 flex items-center justify-center">
           <Image
-            src="/assets/images/logo.png"
+            src="/assets/logo.png"
             alt="Product"
             width={270}
             height={270}

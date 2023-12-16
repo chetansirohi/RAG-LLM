@@ -10,7 +10,7 @@ const IndexPage = () => {
         {/* Image Column */}
         <div className="flex-1 flex justify-center mb-8 md:mb-0">
           <Image
-            src="/assets/images/logo.png"
+            src="/assets/logo.png"
             alt="Product"
             width={170}
             height={170}
@@ -20,13 +20,22 @@ const IndexPage = () => {
 
         {/* Text Column */}
         <div className="flex-1">
-          <h2 className="text-xl font-bold mb-4">How It Works</h2>
+          <h2 className="text-xl font-bold mb-4 md:text-4xl">How It Works</h2>
           <ul className=" list-inside mb-4">
-            <li>First important point or feature.</li>
-            <li>Second important point or feature.</li>
-            <li>Third important point or feature.</li>
+            <li className="mb-2">
+              <b>Input and Retrieve:</b> Input queries or external data; Chatty
+              retrieves relevant information through vector matching.
+            </li>
+            <li className="mb-2">
+              <b>Augment and Respond:</b> Integrates retrieved data with LLM for
+              accurate, context-rich responses.
+            </li>
+            <li className="mb-2">
+              <b>Continuous Update:</b> Regularly refreshes data sources to
+              ensure up-to-date, relevant information.
+            </li>
           </ul>
-          <Button className=" hover:bg-gray-700  ">Try Now</Button>
+          {/* <Button className=" hover:bg-gray-700  ">Try Now</Button> */}
         </div>
       </div>
     </div>

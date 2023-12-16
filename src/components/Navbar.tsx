@@ -4,26 +4,34 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "./ui/button";
 
-const Navbar = () => {
+import UserMenuButton from "./UserMenuButton";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../app/api/auth/[...nextauth]/route";
+
+export default async function Navbar() {
+  const session = await getServerSession(authOptions);
   return (
-    <nav className="flex items-center justify-between w-full border-b-4 ">
-      <Link href="/" className="flex items-center px-4">
+    <nav className="flex items-center justify-between w-full px-4">
+      <Link href="/" passHref>
         <Image
-          src="/assets/images/logo.png"
+          src="/assets/logo.png"
           alt="chatty-logo"
           width={70}
           height={70}
-          className="object-contain "
+          className="object-contain"
         />
       </Link>
       <p className="flex justify-center text-[30px] md:text-[50px] items-center">
         Chatty
       </p>
-      <div className="flex items-center px-4">
-        <Button className=" hover:bg-gray-700  ">Try Now</Button>
+      <div className="flex items-center">
+        {session && (
+          <Link href="/chat" passHref>
+            <Button className="hidden md:inline-block mr-2">New Chat</Button>
+          </Link>
+        )}
+        <UserMenuButton session={session} />
       </div>
     </nav>
   );
-};
-
-export default Navbar;
+}
