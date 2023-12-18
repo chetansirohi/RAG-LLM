@@ -15,9 +15,9 @@ const ChatScreen = () => {
     // Adjust the height of the textarea
     const textarea = textareaRef.current;
     textarea.style.height = "auto";
-    const newHeight = Math.min(textarea.scrollHeight, 175); // Max height 175px
+    const newHeight = Math.min(textarea.scrollHeight, 250); // Max height 175px
     textarea.style.height = `${newHeight}px`;
-    textarea.style.overflowY = newHeight >= 175 ? "scroll" : "hidden"; // Enable scrolling if needed
+    textarea.style.overflowY = newHeight >= 250 ? "scroll" : "hidden"; // Enable scrolling if needed
   };
 
   const handleSendMessage = () => {
@@ -30,7 +30,7 @@ const ChatScreen = () => {
   };
 
   return (
-    <div className="flex flex-col h-full p-4">
+    <div className="flex flex-col h-full px-[4rem] pt-[4rem]">
       {/* Chat Display Area */}
       <div className="flex-grow overflow-auto mb-4">
         {chat.map((chatMsg, index) => (
@@ -49,7 +49,7 @@ const ChatScreen = () => {
       <div className="relative">
         <textarea
           ref={textareaRef}
-          className="w-full p-3 pl-10 pr-10 border rounded resize-none"
+          className="w-full p-3 pl-10 pr-10 border rounded resize-none overflow-hidden hide-scrollbar "
           placeholder="Type your message..."
           value={message}
           onChange={handleInputChange}
