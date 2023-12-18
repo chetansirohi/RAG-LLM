@@ -1,7 +1,7 @@
 import React from "react";
 import Image from "next/image";
 
-const Main = () => {
+export default function Main() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col md:flex-row items-center justify-center gap-8">
@@ -31,6 +31,4 @@ const Main = () => {
       </div>
     </div>
   );
-};
-
-export default Main;
+}

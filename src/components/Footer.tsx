@@ -8,7 +8,7 @@ import {
   faGithub,
 } from "@fortawesome/free-brands-svg-icons";
 
-const Footer = () => {
+export default function Footer() {
   return (
     <footer className="bg-gray-800 text-white text-center p-4">
       {/* Logo and Title */}
@@ -29,15 +29,27 @@ const Footer = () => {
         <div className="mb-4 md:mb-0 px-2">© 2023 Chatty</div>
         <div className="mb-4 md:mb-0">Made with love by Chetan Sirohi</div>
         <div className="flex justify-center px-2 gap-2">
-          <a href="https://twitter.com/" className="mx-2">
+          <a
+            href="https://twitter.com/SirohiChetan"
+            className="mx-2"
+            target="_blank"
+          >
             <FontAwesomeIcon icon={faTwitter} size="lg" />{" "}
             {/* Increased icon size */}
           </a>
-          <a href="https://linkedin.com/" className="mx-2">
+          <a
+            href="https://www.linkedin.com/in/chetan-sirohi-29974b169/"
+            className="mx-2"
+            target="_blank"
+          >
             <FontAwesomeIcon icon={faLinkedinIn} size="lg" />{" "}
             {/* Increased icon size */}
           </a>
-          <a href="https://github.com/" className="mx-2">
+          <a
+            href="https://github.com/chetansirohi"
+            className="mx-2"
+            target="_blank"
+          >
             <FontAwesomeIcon icon={faGithub} size="lg" />{" "}
             {/* Increased icon size */}
           </a>
@@ -45,6 +57,4 @@ const Footer = () => {
       </div>
     </footer>
   );
-};
-
-export default Footer;
+}

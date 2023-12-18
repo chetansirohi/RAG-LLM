@@ -6,10 +6,10 @@ import HowItWorks from "@/components/HowItWorks";
 export default function Home() {
   return (
     <main className="flex flex-col flex-grow">
-      <section className="w-full min-h-screen flex items-center justify-center">
+      <section className="w-full min-h-screen flex items-center justify-center py-[4rem]">
         <Main />
       </section>
-      <section className="w-full min-h-screen flex items-center justify-center">
+      <section className="w-full min-h-screen flex items-center justify-center py-[4rem]">
         <HowItWorks />
       </section>
     </main>

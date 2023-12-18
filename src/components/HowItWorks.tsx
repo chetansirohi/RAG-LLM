@@ -3,7 +3,7 @@ import React from "react";
 import Image from "next/image";
 import { Button } from "./ui/button";
 
-const IndexPage = () => {
+export default function IndexPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col md:flex-row items-center">
@@ -40,6 +40,4 @@ const IndexPage = () => {
       </div>
     </div>
   );
-};
-
-export default IndexPage;
+}

@@ -1,90 +1,75 @@
 "use client";
 import React, { useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faSearch,
-  faPlus,
-  faEdit,
-  faBars,
-} from "@fortawesome/free-solid-svg-icons";
+  DropdownMenu,
+  DropdownMenuItem,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+} from "./ui/dropdown-menu"; // Replace with your dropdown menu component
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faEdit } from "@fortawesome/free-solid-svg-icons";
 
-const Sidebar: React.FC = () => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+const Sidebar = () => {
+  const [chats, setChats] = useState([]); // Replace with your chat data
 
-  const handleEditClick = () => {
-    setIsEditing(!isEditing);
+  const handleNewChat = () => {
+    // Logic to handle new chat creation
   };
 
-  const handleSidebarToggle = () => {
-    setIsSidebarOpen(!isSidebarOpen);
+  const handleRenameChat = (chatId) => {
+    // Logic to rename a chat
+  };
+
+  const handleShareChat = (chatId) => {
+    // Logic to share a chat
+  };
+
+  const handleDeleteChat = (chatId) => {
+    // Logic to delete a chat
   };
 
   return (
-    <>
-      {/* Hamburger Menu for Small Screens */}
-      <div className="md:hidden flex items-center justify-between bg-gray-800 p-4">
-        <button className="text-white" onClick={handleSidebarToggle}>
-          <FontAwesomeIcon icon={faBars} size="lg" />
+    <div className="p-[2rem] h-full overflow-y-auto bg-gray-300">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold">Chats</h2>
+        <button
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          onClick={handleNewChat}
+        >
+          + New Chat
         </button>
-        <div className="text-white text-xl">Chatty</div>
-        {/* Add user photo here */}
       </div>
 
-      {/* Sidebar */}
-      <aside
-        className={`${
-          isSidebarOpen ? "w-90" : "hidden"
-        } md:w-1/3 lg:w-1/4 xl:w-1/5 bg-gray-200 h-screen overflow-y-auto md:flex md:flex-col`}
-      >
-        <div className="p-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl">Chats</h2>
-            <button className="bg-blue-500 text-white py-2 px-4 rounded">
-              <FontAwesomeIcon icon={faPlus} className="mr-2" />
-              New Chat
-            </button>
-          </div>
-          <div className="relative mt-4">
-            <input
-              type="text"
-              placeholder="Search for your chats"
-              className="border rounded p-2 pr-10 w-full"
-            />
-            <button className="absolute top-0 right-0 bg-blue-500 text-white py-2 px-4 rounded">
-              <FontAwesomeIcon icon={faSearch} />
-            </button>
-          </div>
-          <div className="mt-4">
-            <div
-              className={`flex justify-between items-center py-2 border-b cursor-pointer ${
-                isEditing ? "bg-gray-100" : ""
-              }`}
-              onClick={handleEditClick}
-            >
-              <span>Chat Title 1</span>
-              <FontAwesomeIcon
-                icon={faEdit}
-                className="text-gray-500 text-sm"
-              />
-            </div>
-            <div
-              className={`flex justify-between items-center py-2 border-b cursor-pointer ${
-                isEditing ? "bg-gray-100" : ""
-              }`}
-              onClick={handleEditClick}
-            >
-              <span>Chat Title 2</span>
-              <FontAwesomeIcon
-                icon={faEdit}
-                className="text-gray-500 text-sm"
-              />
-            </div>
-            {/* Add more chat titles as needed */}
-          </div>
-        </div>
-      </aside>
-    </>
+      <ul>
+        {chats.map((chat, index) => (
+          <li
+            key={index}
+            className="flex justify-between items-center mb-2 bg-gray-100 p-2 rounded"
+          >
+            <span>{chat.name}</span>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button>
+                  <FontAwesomeIcon icon={faEdit} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => handleRenameChat(chat.id)}>
+                  Rename
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleShareChat(chat.id)}>
+                  Share
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleDeleteChat(chat.id)}>
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 };
 
