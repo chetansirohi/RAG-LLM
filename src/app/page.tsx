@@ -2,6 +2,7 @@ import Navbar from "@/components/Navbar";
 import Image from "next/image";
 import Main from "@/components/Main";
 import HowItWorks from "@/components/HowItWorks";
+// import va from "@vercel/analytics";
 
 export default function Home() {
   return (

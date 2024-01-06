@@ -21,11 +21,7 @@ export const authOptions: NextAuthOptions = {
             return session;
         },
     },
-    // events: {
-    //     async signIn({ user }) {
-    //         await mergeAnonymousCartIntoUserCart(user.id);
-    //     },
-    // },
+
 };
 
 const handler = NextAuth(authOptions);
