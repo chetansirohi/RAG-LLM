@@ -1,6 +1,6 @@
 import React from "react";
-import Sidebar from "@/components/Sidebar";
-import ChatScreen from "@/components/ChatScreen";
+import Sidebar from "@/components/ChatBox/Sidebar";
+import ChatScreen from "@/components/ChatBox/ChatScreen";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "../api/auth/[...nextauth]/route";
@@ -10,6 +10,7 @@ export default async function ChatPage() {
 
   if (!session) {
     redirect("/api/auth/signin?callbackUrl=/chat");
+    return null;
   }
 
   return (
@@ -22,7 +23,7 @@ export default async function ChatPage() {
 
       {/* ChatScreen: Takes up 2/3 of the width */}
       <div className="w-[80%] h-full overflow-y-auto">
-        <ChatScreen />
+        <ChatScreen user={session.user} />
       </div>
     </div>
   );

@@ -1,7 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import formidable, { File, Fields, Files } from 'formidable';
-import prisma from '../../../lib/db/prisma';
-import { s3Upload } from '../../../lib/db/s3services';
+// const formidable = require('formidable');
+import prisma from '@/lib/db/prisma';
+import { s3Upload } from '@/lib/db/s3services';
+import { env } from "@/lib/env";
+
+
 
 export const config = {
     api: {
@@ -9,7 +13,7 @@ export const config = {
     },
 };
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export async function POST(req: NextApiRequest, res: NextApiResponse) {
     if (req.method !== 'POST') {
         return res.status(405).json({ message: 'Method not allowed' });
     }
@@ -32,7 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const userId = Array.isArray(fields.userId) ? fields.userId[0] : fields.userId;
 
         try {
-            const uploadResult = await s3Upload(process.env.S3_BUCKET!, {
+            const uploadResult = await s3Upload(env.S3_BUCKET!, {
                 name: file.originalFilename || file.newFilename, // Use appropriate property
                 path: file.filepath,
             });
@@ -53,3 +57,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
     });
 }
+

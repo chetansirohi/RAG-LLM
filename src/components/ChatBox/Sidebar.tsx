@@ -6,7 +6,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
   DropdownMenuContent,
-} from "./ui/dropdown-menu"; // Replace with your dropdown menu component
+} from "../ui/dropdown-menu"; // Replace with your dropdown menu component
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEdit } from "@fortawesome/free-solid-svg-icons";
 
