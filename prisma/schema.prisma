@@ -65,6 +65,7 @@ model File {
     id          String   @id @default(auto()) @map("_id") @db.ObjectId
     fileName    String   @unique
     fileUrl     String   @unique
+    checksum    String
     isProcessed Boolean  @default(false)
     createdAt   DateTime @default(now()) @map("createdAt")
     updatedAt   DateTime @updatedAt @map("updatedAt")

@@ -23,7 +23,7 @@ export default async function ChatPage() {
 
       {/* ChatScreen: Takes up 2/3 of the width */}
       <div className="w-[80%] h-full overflow-y-auto">
-        <ChatScreen user={session.user} />
+        <ChatScreen />
       </div>
     </div>
   );

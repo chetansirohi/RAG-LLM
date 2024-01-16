@@ -54,22 +54,27 @@ export async function POST(req: Request, res: Response) {
             return Response.json({ message: 'Invalid file type or size', status: 400 });
         }
 
-        const uniqueFileName = await generateFileName(session.user.id, file.name);
+
+
+        // Compute checksum
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const checksum = crypto.createHash('sha256').update(buffer).digest('hex');
 
         // Check for existing file
-        const existingFile = await prisma.file.findUnique({
+        const existingFile = await prisma.file.findFirst({
             where: {
-                fileName: uniqueFileName,
+                AND: [
+                    { userId: session.user.id },
+                    { checksum: checksum },
+                ],
             },
         });
         if (existingFile) {
             return Response.json({ message: 'File with this name already exists' }, { status: 400 });
         }
 
-
-        // Compute checksum
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const checksum = crypto.createHash('sha256').update(buffer).digest('hex');
+        // Generate unique file name
+        const uniqueFileName = await generateFileName(session.user.id, file.name);
 
         // Get signed URL
         const url = await getSignedURL(file.type, file.size, checksum, uniqueFileName);
@@ -93,6 +98,7 @@ export async function POST(req: Request, res: Response) {
             data: {
                 fileName: uniqueFileName,
                 fileUrl: url.split("?")[0],
+                checksum: checksum,
                 userId: session.user.id,
                 isProcessed: false,
             },
@@ -106,5 +112,4 @@ export async function POST(req: Request, res: Response) {
         return Response.json({ message: 'Upload Error' }, { status: 500 });
     }
 }
-
 
