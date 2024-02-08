@@ -8,18 +8,19 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 interface FileUploadProps {
-  user: any; // Replace 'any' with a more specific type if available
   onFileSelected: (file: File | null) => void;
 }
 
-const FileUpload: React.FC<FileUploadProps> = ({ user, onFileSelected }) => {
+const FileUpload: React.FC<FileUploadProps> = ({ onFileSelected }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState<boolean>(false);
   const [fileSelected, setFileSelected] = useState<boolean>(false);
+  const [uploadCompleted, setUploadCompleted] = useState<boolean>(false);
 
   const resetFileInput = () => {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
+      setFileSelected(false);
     }
   };
 
@@ -45,9 +46,11 @@ const FileUpload: React.FC<FileUploadProps> = ({ user, onFileSelected }) => {
 
         if (response.ok) {
           alert("File uploaded successfully");
+
+          setUploadCompleted(true);
         } else {
           const data = await response.json();
-          alert(data.message);
+          alert("Upload failed: " + data.message);
         }
       } catch (error) {
         console.error("Error uploading file:", error);
@@ -68,49 +71,40 @@ const FileUpload: React.FC<FileUploadProps> = ({ user, onFileSelected }) => {
     setFileSelected(false);
     onFileSelected(null);
     resetFileInput(); // Reset file input when file is removed
+    setUploadCompleted(false);
   };
 
   const handleFileUploadClick = () => {
-    fileInputRef.current?.click();
+    if (!uploadCompleted) {
+      // Check if upload is not completed before triggering click
+      fileInputRef.current?.click();
+    }
   };
 
   return (
     <div style={{ position: "relative" }}>
-      {fileSelected && !uploading ? (
-        <div
-          onClick={handleRemoveFile}
-          style={{
-            position: "absolute",
-            right: "10px",
-            top: "10px",
-            cursor: "pointer",
-            zIndex: 2,
-            color: "gray",
-          }}
-        >
-          <FontAwesomeIcon icon={faTimes} />
-        </div>
-      ) : null}
-
-      <div
-        onClick={handleFileUploadClick}
-        style={{
-          position: "absolute",
-          left: "10px",
-          bottom: "10px",
-          cursor: "pointer",
-          zIndex: 2,
-          color: "gray",
-          backgroundColor: "transparent",
-          border: "none",
-        }}
-      >
-        {uploading ? (
-          <FontAwesomeIcon icon={faSpinner} spin />
-        ) : (
-          <FontAwesomeIcon icon={faPaperclip} />
-        )}
-      </div>
+      {uploading ? (
+        <FontAwesomeIcon
+          icon={faSpinner}
+          spin
+          style={{ position: "absolute", left: "10px", bottom: "10px" }}
+        />
+      ) : (
+        !fileSelected && (
+          <div
+            onClick={handleFileUploadClick}
+            style={{
+              position: "absolute",
+              left: "10px",
+              bottom: "10px",
+              cursor: uploadCompleted ? "default" : "pointer",
+              opacity: uploadCompleted ? 0.5 : 1,
+            }}
+          >
+            <FontAwesomeIcon icon={faPaperclip} />
+          </div>
+        )
+      )}
 
       <input
         type="file"
@@ -118,6 +112,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ user, onFileSelected }) => {
         onChange={handleFileInputChange}
         style={{ display: "none" }}
         accept="application/pdf"
+        disabled={uploadCompleted}
       />
     </div>
   );

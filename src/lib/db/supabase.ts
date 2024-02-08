@@ -1,8 +1,9 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { Database } from "../../../@types/supabase";
+import { env } from "@/lib/env";
 
-const SUPABASE_URL: string | undefined = process.env.SUPABASE_URL;
-const SUPABASE_PRIVATE_KEY: string | undefined = process.env.SUPABASE_PRIVATE_KEY;
+const SUPABASE_URL: string | undefined = env.SUPABASE_URL;
+const SUPABASE_PRIVATE_KEY: string | undefined = env.SUPABASE_PRIVATE_KEY;
 
 if (!SUPABASE_URL) {
     throw new Error('Expected env var SUPABASE_URL');

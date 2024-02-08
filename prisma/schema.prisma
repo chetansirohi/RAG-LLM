@@ -16,7 +16,6 @@ model User {
     sessions      Session[]
     accounts      Account[]
     files         File[]
-    // chatSessions  ChatSession[]
 
     @@map("users")
 }
@@ -66,6 +65,7 @@ model File {
     fileName    String   @unique
     fileUrl     String   @unique
     checksum    String
+    secureToken String   @unique
     isProcessed Boolean  @default(false)
     createdAt   DateTime @default(now()) @map("createdAt")
     updatedAt   DateTime @updatedAt @map("updatedAt")
@@ -74,25 +74,3 @@ model File {
 
     @@map("files")
 }
-
-// model ChatSession {
-//     id        String        @id @default(auto()) @map("_id") @db.ObjectId
-//     userId    String        @db.ObjectId
-//     users     User          @relation(fields: [userId], references: [id])
-//     messages  ChatMessage[]
-//     createdAt DateTime      @default(now())
-//     updatedAt DateTime      @updatedAt
-
-//     @@map("chatsessions")
-// }
-
-// model ChatMessage {
-//     id            String      @id @default(auto()) @map("_id") @db.ObjectId
-//     chatSessionId String      @db.ObjectId
-//     chatSession   ChatSession @relation(fields: [chatSessionId], references: [id])
-//     sender        String // "user" or "bot"
-//     content       String
-//     createdAt     DateTime    @default(now())
-
-//     @@map("chatmessages")
-// }
