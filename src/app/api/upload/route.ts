@@ -5,6 +5,12 @@ import prisma from '@/lib/db/prisma';
 import { env } from "@/lib/env";
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/route';
+import { WebPDFLoader } from "langchain/document_loaders/web/pdf";
+import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
+import client from "@/lib/db/supabase";
+import { OpenAIEmbeddings } from "@langchain/openai";
+import { SupabaseVectorStore } from 'langchain/vectorstores/supabase';
+import openAI from "@/lib/openai";
 
 
 const s3Client = new S3Client({
@@ -15,14 +21,14 @@ const s3Client = new S3Client({
     },
 });
 
-const allowedFileType = "application/pdf";
-const maxFileSize = 10 * 1024 * 1024; // 10 MB
 
-async function generateFileName(userId: string, originalName: string, bytes: number = 8): Promise<string> {
-    const nameWithoutExtension = originalName.split('.').slice(0, -1).join('.');
-    const extension = originalName.split('.').pop();
-    const randomPart = crypto.randomBytes(bytes).toString('hex');
-    return `${nameWithoutExtension}-${userId}-${randomPart}.${extension}`;
+async function generateFileName(userId: string, originalName: string): Promise<string> {
+    const timestamp = new Date().getTime();
+    return `${userId}-${timestamp}-${originalName}`;
+}
+
+function generateSecureToken() {
+    return crypto.randomBytes(16).toString('hex'); // Generate a 32-character hex token
 }
 
 async function getSignedURL(fileType: string, fileSize: number, checksum: string, fileName: string): Promise<string> {
@@ -34,47 +40,55 @@ async function getSignedURL(fileType: string, fileSize: number, checksum: string
         ChecksumSHA256: checksum,
     });
 
-    return await getSignedUrl(s3Client, command, { expiresIn: 60 });
+    return await getSignedUrl(s3Client, command, { expiresIn: 150 });
 }
 
-export async function POST(req: Request, res: Response) {
+export async function POST(req: Request) {
     try {
         const session = await getServerSession(authOptions);
-        console.log(session?.user.id);
-        if (!session) {
+        // console.log(session?.user.id);
+
+        if (!session || !session.user) {
             return Response.json({ message: 'Not authenticated', status: 401 });
         }
 
-
-        // Assuming req.body is a FormData object with 'file' field
         const formData = await req.formData();
         const file = formData.get('file') as File;
+
         console.log(file);
-        if (!file || file.type !== allowedFileType || file.size > maxFileSize) {
-            return Response.json({ message: 'Invalid file type or size', status: 400 });
+        if (!file) {
+            return Response.json({ message: 'File is required' }, { status: 400 });
         }
 
+        if (!(file instanceof File)) {
+            return Response.json({ message: 'Invalid file' }, { status: 400 });
+        }
 
+        if (file.type !== "application/pdf" || file.size > 10 * 1024 * 1024) {
+            return Response.json({ message: 'Invalid file type or size' }, { status: 400 });
+        }
 
         // Compute checksum
         const buffer = Buffer.from(await file.arrayBuffer());
         const checksum = crypto.createHash('sha256').update(buffer).digest('hex');
 
         // Check for existing file
-        const existingFile = await prisma.file.findFirst({
-            where: {
-                AND: [
-                    { userId: session.user.id },
-                    { checksum: checksum },
-                ],
-            },
-        });
-        if (existingFile) {
-            return Response.json({ message: 'File with this name already exists' }, { status: 400 });
-        }
+        // const existingFile = await prisma.file.findFirst({
+        //     where: {
+        //         AND: [
+        //             { userId: session.user.id },
+        //             { checksum: checksum },
+        //         ],
+        //     },
+        // });
+        // if (existingFile) {
+        //     return Response.json({ message: 'File with this name already exists' }, { status: 400 });
+        // }
 
         // Generate unique file name
         const uniqueFileName = await generateFileName(session.user.id, file.name);
+
+        const secureToken = generateSecureToken();
 
         // Get signed URL
         const url = await getSignedURL(file.type, file.size, checksum, uniqueFileName);
@@ -86,7 +100,7 @@ export async function POST(req: Request, res: Response) {
                 'Content-Type': file.type,
                 'Content-Length': String(file.size),
             },
-            body: buffer,
+            body: file,
         });
 
         if (!uploadResponse.ok) {
@@ -101,10 +115,62 @@ export async function POST(req: Request, res: Response) {
                 checksum: checksum,
                 userId: session.user.id,
                 isProcessed: false,
+                secureToken: secureToken,
             },
         });
 
-        return Response.json({ success: true, url: fileRecord.fileUrl, id: fileRecord.id, name: fileRecord.fileName });
+        // Load the PDF from S3 URL
+        const response = await fetch(fileRecord.fileUrl);
+        if (!response.ok) {
+            throw new Error(`Failed to load file from S3: ${response.statusText}`);
+        }
+        const fileBlob = await response.blob();
+
+        const metadata = { secureToken: secureToken };
+
+        // Use the WebPDFLoader to load the PDF
+        const loader = new WebPDFLoader(fileBlob, { parsedItemSeparator: "", splitPages: false });
+        const docs = await loader.load();
+
+        // console.log(docs);
+        const splitter = new RecursiveCharacterTextSplitter({
+            chunkSize: 1800,
+            chunkOverlap: 300,
+        });
+
+        const splitDocs = await splitter.splitDocuments(docs);
+        // console.log(splitDocs);
+
+        const texts = splitDocs.map(doc => doc.pageContent);
+        const metadatas = splitDocs.map(doc => {
+            // Check if the document already has metadata
+            const existingMetadata = doc.metadata ? doc.metadata : {};
+
+            return {
+                ...existingMetadata,
+                secureToken: secureToken // Add the secureToken to the metadata
+            };
+        });
+
+        //embed chunks
+        const embeddings = new OpenAIEmbeddings({ modelName: "text-embedding-ada-002", openAIApiKey: env.OPENAI_API_KEY });
+        // console.log(embeddings);
+
+        //initialize vector store 
+        const vectorStore = await SupabaseVectorStore.fromTexts(
+            texts,
+            metadatas,
+            embeddings,
+            { client, tableName: "documents", queryName: "match_documents" }
+        );
+
+        await prisma.file.update({
+            where: { secureToken: secureToken },
+            data: { isProcessed: true },
+        });
+
+
+        return Response.json({ success: true, token: secureToken });
 
 
     } catch (error) {
