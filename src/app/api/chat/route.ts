@@ -23,7 +23,9 @@ const openai = new OpenAI({
 export const runtime = 'edge';
 
 export async function POST(req: Request) {
-    const { messages } = await req.json();
+    const { messages, secureToken } = await req.json();
+    const vectorFetcher = '4276d74e8464fe1b68c32677f21be8ce';
+    console.log(secureToken);
 
 
     // Ask OpenAI for a streaming chat completion given the prompt
