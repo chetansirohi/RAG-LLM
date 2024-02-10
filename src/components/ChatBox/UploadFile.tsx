@@ -9,9 +9,13 @@ import {
 
 interface FileUploadProps {
   onFileSelected: (file: File | null) => void;
+  onTokenReceived: (token: string) => void;
 }
 
-const FileUpload: React.FC<FileUploadProps> = ({ onFileSelected }) => {
+const FileUpload: React.FC<FileUploadProps> = ({
+  onFileSelected,
+  onTokenReceived,
+}) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState<boolean>(false);
   const [fileSelected, setFileSelected] = useState<boolean>(false);
@@ -43,13 +47,13 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileSelected }) => {
           method: "POST",
           body: formData,
         });
+        const data = await response.json();
 
         if (response.ok) {
+          onTokenReceived(data.token);
           alert("File uploaded successfully");
-
           setUploadCompleted(true);
         } else {
-          const data = await response.json();
           alert("Upload failed: " + data.message);
         }
       } catch (error) {

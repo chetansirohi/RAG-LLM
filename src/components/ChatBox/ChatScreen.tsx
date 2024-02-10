@@ -11,18 +11,21 @@ import {
 import { Textarea } from "../ui/textarea";
 import FileUpload from "../ChatBox/UploadFile";
 import { cn } from "@/lib/utils";
-import { useChat } from "ai/react";
+import { UseChatHelpers, useChat } from "ai/react";
+import { UseChatOptions } from "ai";
 
 const ChatScreen = () => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const chatDisplayRef = useRef<HTMLDivElement>(null);
+  const [secureToken, setSecureToken] = useState<String | null>(null);
   const {
     messages,
     input,
     handleInputChange,
     handleSubmit: originalHandleSubmit,
     isLoading,
+    append,
   } = useChat();
 
   const isSubmitEnabled = (input.trim() || pdfFile) && !isLoading;
@@ -42,6 +45,10 @@ const ChatScreen = () => {
     setPdfFile(null);
   };
 
+  const handleTokenReceived = (token: string) => {
+    setSecureToken(token);
+  };
+
   const customHandleInputChange = (
     e: React.ChangeEvent<HTMLTextAreaElement>
   ) => {
@@ -49,14 +56,46 @@ const ChatScreen = () => {
     adjustTextareaHeight();
   };
 
-  const customHandleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  // const customHandleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  //   e.preventDefault();
+  //   if (isSubmitEnabled) {
+  //     originalHandleSubmit(e, { options: { body: { secureToken } } }); // Call the original handleSubmit from useChat
+  //     if (textareaRef.current) {
+  //       textareaRef.current.style.height = "80px"; // Reset textarea height after submission
+  //     }
+  //     setPdfFile(null); // Clear the PDF file after submission
+  //   }
+  // };
+
+  const customHandleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (isSubmitEnabled) {
-      originalHandleSubmit(e); // Call the original handleSubmit from useChat
+    // Check if there is input or a file has been uploaded
+    if (input.trim() || pdfFile) {
+      let options = {};
+      if (secureToken) {
+        // Include the secure token in the request options if it exists
+        options = { body: { secureToken } };
+      }
+      if (!input.trim() && pdfFile) {
+        // If there's no input but a file is uploaded, append a welcoming message
+        // and send the secureToken to the API
+        await append(
+          {
+            content:
+              "File Processed Successfully,Ask me anything about your pdf file.",
+            role: "system",
+          },
+          { options }
+        );
+      } else {
+        // Proceed with the normal submission process
+        originalHandleSubmit(e, { options });
+      }
       if (textareaRef.current) {
         textareaRef.current.style.height = "80px"; // Reset textarea height after submission
       }
       setPdfFile(null); // Clear the PDF file after submission
+      setSecureToken(null); // Optionally clear the secure token if it should only be used once
     }
   };
 
@@ -132,7 +171,10 @@ const ChatScreen = () => {
           style={{ minHeight: "80px", maxHeight: "250px" }}
           disabled={isLoading} // Disable text area when text is being generated
         />
-        <FileUpload onFileSelected={handleFileSelected} />
+        <FileUpload
+          onFileSelected={handleFileSelected}
+          onTokenReceived={handleTokenReceived}
+        />
         <Button
           type="submit"
           className="absolute right-3 bottom-3 text-gray-500"

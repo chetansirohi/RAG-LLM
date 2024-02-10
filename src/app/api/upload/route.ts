@@ -72,19 +72,6 @@ export async function POST(req: Request) {
         const buffer = Buffer.from(await file.arrayBuffer());
         const checksum = crypto.createHash('sha256').update(buffer).digest('hex');
 
-        // Check for existing file
-        // const existingFile = await prisma.file.findFirst({
-        //     where: {
-        //         AND: [
-        //             { userId: session.user.id },
-        //             { checksum: checksum },
-        //         ],
-        //     },
-        // });
-        // if (existingFile) {
-        //     return Response.json({ message: 'File with this name already exists' }, { status: 400 });
-        // }
-
         // Generate unique file name
         const uniqueFileName = await generateFileName(session.user.id, file.name);
 
