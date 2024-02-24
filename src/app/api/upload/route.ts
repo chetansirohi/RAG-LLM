@@ -113,7 +113,7 @@ export async function POST(req: Request) {
         }
         const fileBlob = await response.blob();
 
-        const metadata = { secureToken: secureToken };
+        const metadata = { secureToken: secureToken, user_id: session.user.id };
 
         // Use the WebPDFLoader to load the PDF
         const loader = new WebPDFLoader(fileBlob, { parsedItemSeparator: "", splitPages: false });
@@ -135,7 +135,8 @@ export async function POST(req: Request) {
 
             return {
                 ...existingMetadata,
-                secureToken: secureToken // Add the secureToken to the metadata
+                secureToken: secureToken, // Add the secureToken to the metadata
+                user_id: session.user.id
             };
         });
 

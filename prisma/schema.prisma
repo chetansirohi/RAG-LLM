@@ -8,14 +8,15 @@ datasource db {
 }
 
 model User {
-    id            String    @id @default(auto()) @map("_id") @db.ObjectId
+    id            String        @id @default(auto()) @map("_id") @db.ObjectId
     name          String
-    email         String    @unique
+    email         String        @unique
     emailVerified DateTime?
     image         String?
     sessions      Session[]
     accounts      Account[]
     files         File[]
+    chatSessions  ChatSession[]
 
     @@map("users")
 }
@@ -73,4 +74,16 @@ model File {
     user        User     @relation(fields: [userId], references: [id])
 
     @@map("files")
+}
+
+model ChatSession {
+    id          String   @id @default(auto()) @map("_id") @db.ObjectId
+    userId      String   @db.ObjectId
+    user        User     @relation(fields: [userId], references: [id])
+    chatHistory String // Assuming chat history is stored as a JSON string or similar
+    secureToken String
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    @@map("chatsessions")
 }
