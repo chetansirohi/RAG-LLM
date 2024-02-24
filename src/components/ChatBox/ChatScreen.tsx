@@ -56,17 +56,6 @@ const ChatScreen = () => {
     adjustTextareaHeight();
   };
 
-  // const customHandleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-  //   e.preventDefault();
-  //   if (isSubmitEnabled) {
-  //     originalHandleSubmit(e, { options: { body: { secureToken } } }); // Call the original handleSubmit from useChat
-  //     if (textareaRef.current) {
-  //       textareaRef.current.style.height = "80px"; // Reset textarea height after submission
-  //     }
-  //     setPdfFile(null); // Clear the PDF file after submission
-  //   }
-  // };
-
   const customHandleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     // Check if there is input or a file has been uploaded
@@ -81,8 +70,7 @@ const ChatScreen = () => {
         // and send the secureToken to the API
         await append(
           {
-            content:
-              "File Processed Successfully,Ask me anything about your pdf file.",
+            content: "File Processed Successfully",
             role: "system",
           },
           { options }
