@@ -36,7 +36,7 @@ export default function UserMenuButton({ session }: UserMenuButtonProps) {
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuItem asChild className="md:hidden">
-              <Link href="/chat">New Chat</Link>
+              <Link href="/chat">Chat Now</Link>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/" })}>
               Sign Out

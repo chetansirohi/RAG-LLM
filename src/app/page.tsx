@@ -2,6 +2,7 @@ import Navbar from "@/components/Navbar";
 import Image from "next/image";
 import Main from "@/components/Main";
 import HowItWorks from "@/components/HowItWorks";
+import Footer from "@/components/Footer";
 // import va from "@vercel/analytics";
 
 export default function Home() {
@@ -13,6 +14,7 @@ export default function Home() {
       <section className="w-full min-h-screen flex items-center justify-center py-[4rem]">
         <HowItWorks />
       </section>
+      <Footer />
     </main>
   );
 }

@@ -3,14 +3,12 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import crypto from "crypto";
 import prisma from '@/lib/db/prisma';
 import { env } from "@/lib/env";
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
 import { WebPDFLoader } from "langchain/document_loaders/web/pdf";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import client from "@/lib/db/supabase";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { SupabaseVectorStore } from 'langchain/vectorstores/supabase';
-import openAI from "@/lib/openai";
+import { auth } from "@/lib/auth"
 
 
 const s3Client = new S3Client({
@@ -45,17 +43,17 @@ async function getSignedURL(fileType: string, fileSize: number, checksum: string
 
 export async function POST(req: Request) {
     try {
-        const session = await getServerSession(authOptions);
+        const session = await auth();
         // console.log(session?.user.id);
 
-        if (!session || !session.user) {
+        if (!session?.user) {
             return Response.json({ message: 'Not authenticated', status: 401 });
         }
 
         const formData = await req.formData();
         const file = formData.get('file') as File;
 
-        console.log(file);
+        // console.log(file);
         if (!file) {
             return Response.json({ message: 'File is required' }, { status: 400 });
         }
@@ -119,14 +117,13 @@ export async function POST(req: Request) {
         const loader = new WebPDFLoader(fileBlob, { parsedItemSeparator: "", splitPages: false });
         const docs = await loader.load();
 
-        // console.log(docs);
         const splitter = new RecursiveCharacterTextSplitter({
             chunkSize: 1800,
             chunkOverlap: 300,
         });
 
         const splitDocs = await splitter.splitDocuments(docs);
-        // console.log(splitDocs);
+
 
         const texts = splitDocs.map(doc => doc.pageContent);
         const metadatas = splitDocs.map(doc => {
@@ -135,14 +132,13 @@ export async function POST(req: Request) {
 
             return {
                 ...existingMetadata,
-                secureToken: secureToken, // Add the secureToken to the metadata
+                secureToken: secureToken,
                 user_id: session.user.id
             };
         });
 
-        //embed chunks
+
         const embeddings = new OpenAIEmbeddings({ modelName: "text-embedding-ada-002", openAIApiKey: env.OPENAI_API_KEY });
-        // console.log(embeddings);
 
         //initialize vector store 
         const vectorStore = await SupabaseVectorStore.fromTexts(

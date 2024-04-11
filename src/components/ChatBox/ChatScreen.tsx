@@ -11,22 +11,40 @@ import {
 import { Textarea } from "../ui/textarea";
 import FileUpload from "../ChatBox/UploadFile";
 import { cn } from "@/lib/utils";
-import { UseChatHelpers, useChat } from "ai/react";
-import { UseChatOptions } from "ai";
+import { useChat } from "ai/react";
 
 const ChatScreen = () => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const chatDisplayRef = useRef<HTMLDivElement>(null);
   const [secureToken, setSecureToken] = useState<String | null>(null);
+  const [sourcesForMessages, setSourcesForMessages] = useState<
+    Record<string, any>
+  >({});
+
   const {
     messages,
     input,
+    setInput,
     handleInputChange,
     handleSubmit: originalHandleSubmit,
     isLoading,
     append,
-  } = useChat();
+  } = useChat({
+    onResponse: (response) => {
+      const sourcesHeader = response.headers.get("x-sources");
+      const sources = sourcesHeader
+        ? JSON.parse(Buffer.from(sourcesHeader, "base64").toString("utf8"))
+        : [];
+      const messageIndexHeader = response.headers.get("x-message-index");
+      if (sources.length && messageIndexHeader !== null) {
+        setSourcesForMessages((prevSources) => ({
+          ...prevSources,
+          [messageIndexHeader]: sources,
+        }));
+      }
+    },
+  });
 
   const isSubmitEnabled = (input.trim() || pdfFile) && !isLoading;
 
@@ -104,25 +122,43 @@ const ChatScreen = () => {
   };
 
   return (
-    <div className="flex flex-col h-full px-[10%] pt-[4rem]">
+    <div className="flex flex-col h-full px-[10%] pt-[5rem] pb-[2.5rem]">
       <div
         className="w-[80%] mx-auto flex-grow overflow-auto mb-4 hide-scrollbar"
         ref={chatDisplayRef}
       >
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`p-2 ${msg.role === "user" ? "text-right" : ""}`}
-          >
-            <span
-              className={`inline-block rounded p-2 ${
-                msg.role === "user" ? "bg-blue-400" : "bg-gray-400"
-              }`}
-            >
-              {msg.content}
-            </span>
-          </div>
-        ))}
+        {messages.map((msg, index) => {
+          const sources = sourcesForMessages[index.toString()] || [];
+          const alignmentClassName =
+            msg.role === "user" ? "text-right" : "text-left";
+          const colorClassName =
+            msg.role === "user" ? "bg-blue-400" : "bg-gray-400";
+
+          return (
+            <div key={index} className={`p-2 ${alignmentClassName}`}>
+              <div className={`inline-block rounded p-2 ${colorClassName}`}>
+                {msg.content}
+              </div>
+              {sources.length > 0 && (
+                <div className="mt-2 text-xs">
+                  <strong>Sources:</strong>
+                  {sources.map((source: any, sourceIndex: number) => (
+                    <div key={sourceIndex}>
+                      {sourceIndex + 1}. "{source.pageContent}"
+                      {source.metadata?.loc?.lines && (
+                        <span>
+                          {" "}
+                          (Lines {source.metadata.loc.lines.from}-
+                          {source.metadata.loc.lines.to})
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       <form

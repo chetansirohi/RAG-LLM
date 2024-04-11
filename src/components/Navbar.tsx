@@ -3,12 +3,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "./ui/button";
 import UserMenuButton from "./UserMenuButton";
-import { getServerSession, Session } from "next-auth";
-import { authOptions } from "../app/api/auth/[...nextauth]/route";
+import { auth } from "@/lib/auth";
+// import { Session } from "next-auth";
 
 const Navbar: React.FC = async () => {
-  const session: Session | null = await getServerSession(authOptions);
-
+  const session = await auth();
   return (
     <nav className="flex items-center justify-between w-full px-4 fixed top-0 bg-white shadow-md z-50 mb-2">
       <Link href="/" passHref>
@@ -27,7 +26,7 @@ const Navbar: React.FC = async () => {
       </Link>
 
       <div className="flex items-center">
-        {session && (
+        {session?.user && (
           <Link href="/chat" passHref>
             <Button className="hidden md:inline-block mr-2">Chat Now</Button>
           </Link>
