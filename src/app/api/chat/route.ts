@@ -43,10 +43,7 @@ export async function POST(req: Request, res: Response) {
             tableName: "documents",
             similarityQueryName: "match_documents",
             keywordQueryName: "kw_match_documents",
-            // metadata: {
-            //     user_id: "657caf3cc293286a402a8fbe",
-            //     secureToken: "32e140c05d06770fa250a7d7742d226c"
-            // }
+
         });
 
         let retrievedDocuments;
