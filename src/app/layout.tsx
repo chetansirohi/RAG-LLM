@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import SessionProvider from "./SessionProvider";
 import { config } from "@fortawesome/fontawesome-svg-core";
@@ -27,7 +26,6 @@ export default function RootLayout({
           <link rel="icon" href="/favicon.ico" sizes="any" />
           <Navbar />
           {children}
-          <Footer />
         </SessionProvider>
       </body>
     </html>

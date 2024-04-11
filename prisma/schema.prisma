@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-    provider = "mongodb"
-    url      = env("DATABASE_URL")
+    provider  = "mongodb"
+    url       = env("DATABASE_URL")
+    directUrl = env("DIRECTED_DATABASE_URL")
 }
 
 model User {
@@ -17,6 +18,7 @@ model User {
     accounts      Account[]
     files         File[]
     chatSessions  ChatSession[]
+    chats         Chat[]
 
     @@map("users")
 }
@@ -77,13 +79,23 @@ model File {
 }
 
 model ChatSession {
+    id        String   @id @default(auto()) @map("_id") @db.ObjectId
+    userId    String   @db.ObjectId
+    messages  Json // An array of messages
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    User      User     @relation(fields: [userId], references: [id])
+}
+
+model Chat {
     id          String   @id @default(auto()) @map("_id") @db.ObjectId
+    name        String
+    secureToken String?  @unique
     userId      String   @db.ObjectId
     user        User     @relation(fields: [userId], references: [id])
-    chatHistory String // Assuming chat history is stored as a JSON string or similar
-    secureToken String
+    sessionId   String?
     createdAt   DateTime @default(now())
     updatedAt   DateTime @updatedAt
 
-    @@map("chatsessions")
+    @@map("chats")
 }
