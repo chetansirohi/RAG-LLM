@@ -139,7 +139,7 @@ const ChatScreen = () => {
               <div className={`inline-block rounded p-2 ${colorClassName}`}>
                 {msg.content}
               </div>
-              {sources.length > 0 && (
+              {/* {sources.length > 0 && (
                 <div className="mt-2 text-xs">
                   <strong>Sources:</strong>
                   {sources.map((source: any, sourceIndex: number) => (
@@ -155,7 +155,7 @@ const ChatScreen = () => {
                     </div>
                   ))}
                 </div>
-              )}
+              )} */}
             </div>
           );
         })}
