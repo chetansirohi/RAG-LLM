@@ -12,9 +12,9 @@ import { formatDocumentsAsString } from "langchain/util/document";
 import prisma from '@/lib/db/prisma';
 import { auth } from '@/lib/auth';
 import { RunnableSequence } from "@langchain/core/runnables";
-import { ObjectId } from 'mongodb';
+// import { ObjectId } from 'mongodb';
 
-export const runtime = 'nodejs';
+export const runtime = 'edge';
 
 const formatVercelMessages = (chatHistory: VercelChatMessage[]) => {
     const formattedDialogueTurns = chatHistory.map((message) => {
@@ -76,8 +76,8 @@ export async function POST(req: Request, res: Response) {
         const messages = body.messages ?? [];
         const formattedPreviousMessages = messages.slice(0, -1);
         const currentMessageContent = messages[messages.length - 1]?.content;
-        const session = await auth();
-        const sessionId = new ObjectId().toString();
+        // const session = await auth();
+        // const sessionId = new ObjectId().toString();
 
         if (!currentMessageContent) {
             return Response.json({ error: "No message content provided" }, { status: 400 });
@@ -127,12 +127,12 @@ export async function POST(req: Request, res: Response) {
         ]);
 
         // Retrieve the chat history
-        const formattedChatHistory = await getChatHistory(sessionId);
+        // const formattedChatHistory = await getChatHistory(sessionId);
 
         const answerChain = RunnableSequence.from([
             {
                 context: (input) => formatDocumentsAsString(retrievedDocuments),
-                chat_history: (input) => formattedChatHistory,
+                chat_history: (input) => input.chat_history,
                 question: (input) => input.question,
             },
             answerPrompt,
