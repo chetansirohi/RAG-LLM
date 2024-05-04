@@ -44,7 +44,7 @@
     "langchain": "^0.0.207",
     "lucide-react": "^0.294.0",
     "mime": "^3.0.0",
-    "mongodb": "^6.3.0",
+    "mongodb": "^5.2.0",
     "mongoose": "^8.0.3",
     "multiparty": "^4.2.3",
     "next": "14.0.4",
@@ -60,6 +60,7 @@
     "swr": "^2.2.4",
     "tailwind-merge": "^2.1.0",
     "tailwindcss-animate": "^1.0.7",
+    "zlib": "^1.0.5",
     "zod": "^3.22.4"
   },
   "devDependencies": {

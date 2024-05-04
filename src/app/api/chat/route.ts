@@ -76,7 +76,7 @@ export async function POST(req: Request, res: Response) {
         const messages = body.messages ?? [];
         const formattedPreviousMessages = messages.slice(0, -1);
         const currentMessageContent = messages[messages.length - 1]?.content;
-        // const session = await auth();
+        const session = await auth();
         // const sessionId = new ObjectId().toString();
 
         if (!currentMessageContent) {
@@ -142,7 +142,7 @@ export async function POST(req: Request, res: Response) {
         const conversationalRetrievalQAChain = RunnableSequence.from([
             {
                 question: standaloneQuestionChain,
-                // chat_history: (input) => input.chat_history,
+                chat_history: (input) => input.chat_history,
             },
             answerChain,
             new BytesOutputParser(),
@@ -162,12 +162,12 @@ export async function POST(req: Request, res: Response) {
         });
 
         // Convert the stream to a string
-        // let botResponse = '';
-        // const decoder = new TextDecoder();
-        // for await (const chunk of stream) {
-        //     const decodedChunk = decoder.decode(chunk);
-        //     botResponse += decodedChunk;
-        // }
+        let botResponse = '';
+        const decoder = new TextDecoder();
+        for await (const chunk of stream) {
+            const decodedChunk = decoder.decode(chunk);
+            botResponse += decodedChunk;
+        }
 
         // // Store the bot's response in the database
         // await prisma.chatMessage.create({
