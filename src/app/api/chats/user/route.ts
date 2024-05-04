@@ -11,7 +11,7 @@ export async function GET(request: Request) {
             return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
         }
 
-        const userId = request.nextUrl.searchParams.get('userId');
+        const userId = session.user.id;
         if (!userId) {
             return NextResponse.json({ message: 'User ID is required' }, { status: 400 });
         }

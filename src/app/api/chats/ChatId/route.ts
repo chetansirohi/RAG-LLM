@@ -33,28 +33,28 @@ export async function GET(request: Request, { params }: { params: { chatId: stri
     }
 }
 
-export async function POST(request: Request, { params }: { params: { chatId: string } }) {
-    try {
-        const session = await auth();
-        if (!session?.user) {
-            return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-        }
+// export async function POST(request: Request, { params }: { params: { chatId: string } }) {
+//     try {
+//         const session = await auth();
+//         if (!session?.user) {
+//             return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+//         }
 
-        const chatId = params.chatId;
-        const { content } = await request.json();
+//         const chatId = params.chatId;
+//         const { content } = await request.json();
 
-        const newMessage = await prisma.chatMessage.create({
-            data: {
-                content,
-                role: 'user',
-                chatSessionId: chatId,
-                userId: session.user.id,
-            },
-        });
+//         const newMessage = await prisma.chatMessage.create({
+//             data: {
+//                 content,
+//                 role: 'user',
+//                 chatSessionId: chatId,
+//                 userId: session.user.id,
+//             },
+//         });
 
-        return NextResponse.json(newMessage, { status: 201 });
-    } catch (error) {
-        console.error('Error creating chat message:', error);
-        return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
-    }
-}
+//         return NextResponse.json(newMessage, { status: 201 });
+//     } catch (error) {
+//         console.error('Error creating chat message:', error);
+//         return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+//     }
+// }
