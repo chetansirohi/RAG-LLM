@@ -13,6 +13,7 @@ import prisma from '@/lib/db/prisma';
 import { auth } from '@/lib/auth';
 import { RunnableSequence } from "@langchain/core/runnables";
 // import { ObjectId } from 'mongodb';
+import { DocumentInterface } from "@langchain/core/documents";
 
 export const runtime = 'edge';
 
@@ -97,7 +98,7 @@ export async function POST(req: Request, res: Response) {
             keywordQueryName: "kw_match_documents",
         });
 
-        let retrievedDocuments;
+        let retrievedDocuments: DocumentInterface<Record<string, any>>[];
         try {
             retrievedDocuments = await retriever.getRelevantDocuments(currentMessageContent);
         } catch (dbError) {
