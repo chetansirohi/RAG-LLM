@@ -37,8 +37,6 @@
     "clsx": "^2.0.0",
     "date-fns": "^3.2.0",
     "dotenv": "^16.3.1",
-    "formidable": "^3.5.1",
-    "formidable-serverless": "^1.1.1",
     "fs": "^0.0.1-security",
     "langchain": "^0.0.207",
     "lucide-react": "^0.294.0",
