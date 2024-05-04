@@ -249,7 +249,7 @@ const ChatScreen = () => {
             zIndex: 2,
           }}
         >
-          <FontAwesomeIcon icon={faPaperPlane} size="1.5em" />
+          <FontAwesomeIcon icon={faPaperPlane} style={{ fontSize: "1.5em" }} />
         </Button>
       </form>
     </div>
