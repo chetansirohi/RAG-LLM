@@ -10,6 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "postinstall": "prisma generate --no-engine",
     "generate:types": "npx supabase gen types typescript --project-id ilmenybonmxhiwkzqgli --schema public > @types/supabase.ts"
   },
   "dependencies": {
@@ -24,7 +25,6 @@
     "@langchain/community": "^0.0.21",
     "@langchain/core": "^0.1.18",
     "@langchain/openai": "^0.0.13",
-    "@next-auth/prisma-adapter": "^0.4.4-canary.81",
     "@pinecone-database/pinecone": "^1.1.2",
     "@prisma/client": "^5.11.0",
     "@prisma/extension-accelerate": "^1.0.0",
@@ -38,13 +38,11 @@
     "clsx": "^2.0.0",
     "date-fns": "^3.2.0",
     "dotenv": "^16.3.1",
-    "formidable": "^3.5.1",
-    "formidable-serverless": "^1.1.1",
     "fs": "^0.0.1-security",
     "langchain": "^0.0.207",
     "lucide-react": "^0.294.0",
     "mime": "^3.0.0",
-    "mongodb": "^6.3.0",
+    "mongodb": "^5.2.0",
     "mongoose": "^8.0.3",
     "multiparty": "^4.2.3",
     "next": "14.0.4",
@@ -60,6 +58,7 @@
     "swr": "^2.2.4",
     "tailwind-merge": "^2.1.0",
     "tailwindcss-animate": "^1.0.7",
+    "zlib": "^1.0.5",
     "zod": "^3.22.4"
   },
   "devDependencies": {
@@ -74,7 +73,7 @@
     "postcss": "^8",
     "prisma": "^5.7.0",
     "supabase": "^1.127.4",
-    "tailwindcss": "^3.3.0",
+    "tailwindcss": "^3.4.3",
     "typescript": "^5.3.3"
   },
   "resolutions": {

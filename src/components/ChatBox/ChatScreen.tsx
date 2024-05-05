@@ -2,6 +2,7 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "../ui/button";
+import { useSearchParams } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPaperPlane,
@@ -14,6 +15,8 @@ import { cn } from "@/lib/utils";
 import { useChat } from "ai/react";
 
 const ChatScreen = () => {
+  const searchParams = useSearchParams();
+  const selectedChatId = searchParams.get("chatId");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const chatDisplayRef = useRef<HTMLDivElement>(null);
@@ -21,6 +24,7 @@ const ChatScreen = () => {
   const [sourcesForMessages, setSourcesForMessages] = useState<
     Record<string, any>
   >({});
+  const [uploadDisabled, setUploadDisabled] = useState<boolean>(false);
 
   const {
     messages,
@@ -54,6 +58,29 @@ const ChatScreen = () => {
       chatDisplayRef.current.scrollTop = chatDisplayRef.current.scrollHeight;
     }
   }, [messages, isLoading]);
+
+  useEffect(() => {
+    const fetchChatMessages = async () => {
+      if (selectedChatId) {
+        try {
+          const response = await fetch(`/api/chats/${selectedChatId}`);
+          if (response.ok) {
+            const chatSession = await response.json();
+            const uploadedFile = chatSession.messages.find(
+              (msg: any) => msg.file !== null
+            );
+            setUploadDisabled(uploadedFile !== undefined);
+          } else {
+            console.error("Failed to fetch chat session");
+          }
+        } catch (error) {
+          console.error("Error fetching chat session:", error);
+        }
+      }
+    };
+
+    fetchChatMessages();
+  }, [selectedChatId]);
 
   const handleFileSelected = (file: File | null) => {
     setPdfFile(file);
@@ -94,8 +121,19 @@ const ChatScreen = () => {
           { options }
         );
       } else {
-        // Proceed with the normal submission process
-        originalHandleSubmit(e, { options });
+        const response = await fetch(`/api/chats/${selectedChatId}/messages`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ content: input.trim() }),
+        });
+        if (response.ok) {
+          // Message sent successfully, you can update the chat display or fetch updated messages
+          originalHandleSubmit(e, { options });
+        } else {
+          console.error("Failed to send message");
+        }
       }
       if (textareaRef.current) {
         textareaRef.current.style.height = "80px"; // Reset textarea height after submission
@@ -198,6 +236,7 @@ const ChatScreen = () => {
         <FileUpload
           onFileSelected={handleFileSelected}
           onTokenReceived={handleTokenReceived}
+          disabled={uploadDisabled}
         />
         <Button
           type="submit"
@@ -210,7 +249,7 @@ const ChatScreen = () => {
             zIndex: 2,
           }}
         >
-          <FontAwesomeIcon icon={faPaperPlane} size="1.5em" />
+          <FontAwesomeIcon icon={faPaperPlane} style={{ fontSize: "1.5em" }} />
         </Button>
       </form>
     </div>

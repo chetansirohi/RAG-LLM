@@ -10,8 +10,8 @@ const envSchema = z.object({
     SUPABASE_PRIVATE_KEY: z.string().nonempty(),
     SUPABASE_URL: z.string().nonempty(),
     AWS_S3_BUCKET: z.string().nonempty(),
-    AWS_ACCESS_ID: z.string().nonempty(),
-    AWS_ACCESS_KEY: z.string().nonempty(),
+    AWS_ACCESS_KEY_ID: z.string().nonempty(),
+    AWS_SECRET_ACCESS_KEY: z.string().nonempty(),
     AWS_REGION: z.string().nonempty(),
 });
 

@@ -10,11 +10,13 @@ import {
 interface FileUploadProps {
   onFileSelected: (file: File | null) => void;
   onTokenReceived: (token: string) => void;
+  disabled?: boolean;
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({
   onFileSelected,
   onTokenReceived,
+  disabled = false,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState<boolean>(false);
@@ -116,7 +118,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
         onChange={handleFileInputChange}
         style={{ display: "none" }}
         accept="application/pdf"
-        disabled={uploadCompleted}
+        disabled={disabled || uploadCompleted}
       />
     </div>
   );
