@@ -10,6 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "postinstall": "prisma generate --no-engine",
     "generate:types": "npx supabase gen types typescript --project-id ilmenybonmxhiwkzqgli --schema public > @types/supabase.ts"
   },
   "dependencies": {
