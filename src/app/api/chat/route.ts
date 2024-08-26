@@ -7,13 +7,14 @@ import {
 import { env } from "@/lib/env";
 import client from "@/lib/db/supabase";
 import { SupabaseHybridSearch } from "@langchain/community/retrievers/supabase";
-import { Message as VercelChatMessage, StreamingTextResponse, LangChainStream } from 'ai';
+import { Message as VercelChatMessage, StreamingTextResponse, streamText } from 'ai';
 import { formatDocumentsAsString } from "langchain/util/document";
 import prisma from '@/lib/db/prisma';
 import { auth } from '@/lib/auth';
 import { RunnableSequence } from "@langchain/core/runnables";
-// import { ObjectId } from 'mongodb';
 import { DocumentInterface } from "@langchain/core/documents";
+import openai from '@ai-sdk/openai'
+
 
 export const runtime = 'edge';
 
@@ -55,19 +56,19 @@ const ANSWER_TEMPLATE = `You are an artificial intelligent pdf loader and parser
 User's Question: {question}`;
 const answerPrompt = PromptTemplate.fromTemplate(ANSWER_TEMPLATE);
 
-async function getChatHistory(sessionId: string) {
+async function getChatHistory(chatId: string) {
     const chatHistory = await prisma.chatMessage.findMany({
-        where: { sessionId: "662166bf8c6e28fdb5e35a44" },
+        where: { chatSessionId: chatId },
         orderBy: { createdAt: 'asc' },
         take: 10,
     });
-    console.log(chatHistory);
+    // console.log(chatHistory);
 
-    return formatVercelMessages(chatHistory.map(msg => ({
+    return chatHistory.map(msg => ({
         id: msg.id,
         role: msg.role as VercelChatMessage['role'],
         content: msg.content,
-    })));
+    }));
 }
 
 
@@ -78,10 +79,14 @@ export async function POST(req: Request, res: Response) {
         const formattedPreviousMessages = messages.slice(0, -1);
         const currentMessageContent = messages[messages.length - 1]?.content;
         const session = await auth();
-        // const sessionId = new ObjectId().toString();
 
         if (!currentMessageContent) {
             return Response.json({ error: "No message content provided" }, { status: 400 });
+        }
+
+        const chatId = req.headers.get('x-chat-id');
+        if (!chatId) {
+            return Response.json({ error: "No chat ID provided" }, { status: 400 });
         }
 
         const embeddings = new OpenAIEmbeddings({
@@ -106,7 +111,6 @@ export async function POST(req: Request, res: Response) {
 
             return Response.json({ message: "Something went wrong while retrieving the document information. Please try again later." }, { status: 503 });
         }
-        // console.log(retrievedDocuments)
 
         const serializedSources = Buffer.from(JSON.stringify(
             retrievedDocuments.map(doc => ({
@@ -126,9 +130,11 @@ export async function POST(req: Request, res: Response) {
             model,
             new StringOutputParser(),
         ]);
+        // console.log(standaloneQuestionChain);
 
         // Retrieve the chat history
-        // const formattedChatHistory = await getChatHistory(sessionId);
+        const formattedChatHistory = await getChatHistory(chatId);
+
 
         const answerChain = RunnableSequence.from([
             {
@@ -149,17 +155,22 @@ export async function POST(req: Request, res: Response) {
             new BytesOutputParser(),
         ]);
 
-        // await prisma.chatMessage.create({
-        //     data: {
-        //         content: currentMessageContent,
-        //         role: 'user',
-        //         sessionId,
-        //     },
-        // });
+        // console.log(conversationalRetrievalQAChain);
+
+        const storeUserMessage = prisma.chatMessage.create({
+            data: {
+                content: currentMessageContent,
+                role: 'user',
+                sessionId: chatId,
+                userId: session?.user.id,
+                chatSessionId: chatId,
+            },
+        });
 
         const stream = await conversationalRetrievalQAChain.stream({
             question: currentMessageContent,
             chat_history: formatVercelMessages(formattedPreviousMessages),
+            // chat_history: formattedChatHistory
         });
 
         // Convert the stream to a string
@@ -170,14 +181,19 @@ export async function POST(req: Request, res: Response) {
             botResponse += decodedChunk;
         }
 
-        // // Store the bot's response in the database
-        // await prisma.chatMessage.create({
-        //     data: {
-        //         content: botResponse,
-        //         role: 'assistant',
-        //         sessionId,
-        //     },
-        // });
+        // Store the bot's response in the database
+        const storeBotResponse = prisma.chatMessage.create({
+            data: {
+                content: botResponse,
+                role: 'assistant',
+                sessionId: chatId,
+                userId: session?.user.id,
+                chatSessionId: chatId,
+            },
+        });
+
+        // Wait for both database operations to complete concurrently
+        await Promise.all([storeUserMessage, storeBotResponse]);
 
         return new StreamingTextResponse(stream, {
             headers: {
@@ -185,6 +201,7 @@ export async function POST(req: Request, res: Response) {
                 "x-sources": serializedSources,
             },
         });
+
 
     } catch (e) {
         console.error("Error:", e);

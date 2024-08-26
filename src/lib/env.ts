@@ -2,10 +2,10 @@ import { z } from 'zod';
 
 const envSchema = z.object({
     DATABASE_URL: z.string().nonempty(),
-    GOOGLE_CLIENT_ID: z.string().nonempty(),
-    GOOGLE_CLIENT_SECRET: z.string().nonempty(),
+    AUTH_GOOGLE_ID: z.string().nonempty(),
+    AUTH_GOOGLE_SECRET: z.string().nonempty(),
     // NEXTAUTH_URL: z.string().nonempty(),
-    NEXTAUTH_SECRET: z.string().nonempty(),
+    AUTH_SECRET: z.string().nonempty(),
     OPENAI_API_KEY: z.string().nonempty(),
     SUPABASE_PRIVATE_KEY: z.string().nonempty(),
     SUPABASE_URL: z.string().nonempty(),

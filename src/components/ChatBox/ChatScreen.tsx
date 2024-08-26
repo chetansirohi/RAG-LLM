@@ -1,6 +1,6 @@
 //working code
 "use client";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "../ui/button";
 import { useSearchParams } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -101,6 +101,30 @@ const ChatScreen = () => {
     adjustTextareaHeight();
   };
 
+  const createNewChat = useCallback(async () => {
+    try {
+      const response = await fetch("/api/chats", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: "Conversation 1",
+        }),
+      });
+
+      if (response.ok) {
+        const newChat = await response.json();
+        // Redirect to the new chat page
+        window.location.href = `/chat?chatId=${newChat.id}`;
+      } else {
+        console.error("Failed to create new chat");
+      }
+    } catch (error) {
+      console.error("Error creating new chat:", error);
+    }
+  }, []);
+
   const customHandleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     // Check if there is input or a file has been uploaded
@@ -110,6 +134,38 @@ const ChatScreen = () => {
         // Include the secure token in the request options if it exists
         options = { body: { secureToken } };
       }
+
+      if (!selectedChatId) {
+        await createNewChat();
+      } else {
+        options = { ...options, headers: { "x-chat-id": selectedChatId } };
+      }
+
+      // if (selectedChatId) {
+      //   options = { ...options, headers: { "x-chat-id": selectedChatId } };
+      // } else {
+      //   try {
+      //     const response = await fetch("/api/chats", {
+      //       method: "POST",
+      //       headers: {
+      //         "Content-Type": "application/json",
+      //       },
+      //       body: JSON.stringify({
+      //         title: "New Conversation",
+      //       }),
+      //     });
+
+      //     if (response.ok) {
+      //       const newChat = await response.json();
+      //       options = { ...options, headers: { "x-chat-id": newChat.id } };
+      //     } else {
+      //       console.error("Failed to create new chat");
+      //     }
+      //   } catch (error) {
+      //     console.error("Error creating new chat:", error);
+      //   }
+      // }
+
       if (!input.trim() && pdfFile) {
         // If there's no input but a file is uploaded, append a welcoming message
         // and send the secureToken to the API
@@ -121,25 +177,13 @@ const ChatScreen = () => {
           { options }
         );
       } else {
-        const response = await fetch(`/api/chats/${selectedChatId}/messages`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ content: input.trim() }),
-        });
-        if (response.ok) {
-          // Message sent successfully, you can update the chat display or fetch updated messages
-          originalHandleSubmit(e, { options });
-        } else {
-          console.error("Failed to send message");
-        }
+        originalHandleSubmit(e, { options });
       }
       if (textareaRef.current) {
-        textareaRef.current.style.height = "80px"; // Reset textarea height after submission
+        textareaRef.current.style.height = "80px";
       }
-      setPdfFile(null); // Clear the PDF file after submission
-      setSecureToken(null); // Optionally clear the secure token if it should only be used once
+      setPdfFile(null);
+      setSecureToken(null);
     }
   };
 

@@ -4,7 +4,6 @@ import Image from "next/image";
 import { Button } from "./ui/button";
 import UserMenuButton from "./UserMenuButton";
 import { auth } from "@/lib/auth";
-// import { Session } from "next-auth";
 
 const Navbar: React.FC = async () => {
   const session = await auth();

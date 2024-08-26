@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 interface Chat {
   id: string;
@@ -13,40 +14,33 @@ interface Chat {
 const Sidebar = () => {
   const [chats, setChats] = useState<Chat[]>([]);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
-
   const { data: session } = useSession();
+  const router = useRouter();
+
+  const fetchChatSessions = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/chats`);
+      if (response.ok) {
+        const chatSessions = await response.json();
+        setChats(chatSessions);
+        console.log("Fetched chat sessions:", chatSessions);
+      } else {
+        console.error("Failed to fetch chats");
+      }
+    } catch (error) {
+      console.error("Error fetching chats:", error);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchChatSessions = async () => {
-      try {
-        const response = await fetch(
-          `/api/chats/user?userId=${session?.user?.id}`
-        );
-        if (response.ok) {
-          const chatSessions = await response.json();
-          setChats(chatSessions);
-        } else {
-          console.error("Failed to fetch chats");
-        }
-      } catch (error) {
-        console.error("Error fetching chats:", error);
-      }
-    };
-
     if (session?.user) {
       fetchChatSessions();
+      const intervalId = setInterval(fetchChatSessions, 60000);
+      return () => {
+        clearInterval(intervalId);
+      };
     }
-  }, [session?.user]);
-
-  useEffect(() => {
-    // Scroll to the newly created chat
-    if (selectedChatId) {
-      const chatElement = document.getElementById(selectedChatId);
-      if (chatElement) {
-        chatElement.scrollIntoView({ behavior: "smooth" });
-      }
-    }
-  }, [selectedChatId]);
+  }, [session?.user, fetchChatSessions]);
 
   const createNewChat = useCallback(async () => {
     try {
@@ -56,11 +50,7 @@ const Sidebar = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          title:
-            chats.length === 0
-              ? "Conversation 1"
-              : `Conversation ${chats.length + 1}`,
-          userId: session?.user?.id,
+          title: `Conversation ${chats.length + 1}`,
         }),
       });
 
@@ -68,23 +58,18 @@ const Sidebar = () => {
         const newChat: Chat = await response.json();
         setChats([newChat, ...chats]);
         setSelectedChatId(newChat.id);
+        router.push(`/chat?chatId=${newChat.id}`);
       } else {
         console.error("Failed to create new chat");
       }
     } catch (error) {
       console.error("Error creating new chat:", error);
     }
-  }, [chats, session?.user?.id]);
-
-  useEffect(() => {
-    // Check if there are no chats and the user has interacted with the chat area
-    if (chats.length === 0 && session?.user) {
-      createNewChat();
-    }
-  }, [chats, session, createNewChat]);
+  }, [chats, router]);
 
   const handleChatClick = async (chatId: string) => {
     setSelectedChatId(chatId);
+    router.push(`/chat?chatId=${chatId}`);
   };
 
   return (

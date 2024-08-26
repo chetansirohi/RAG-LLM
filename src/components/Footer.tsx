@@ -14,7 +14,7 @@ export default function Footer() {
       {/* Logo and Title */}
       <div className="flex flex-col items-center mb-4">
         <Image
-          src="/assets/images/logo.png"
+          src="/assets/logo.png"
           alt="Chatty Logo"
           width={70}
           height={70}
@@ -26,7 +26,7 @@ export default function Footer() {
       <div className="flex flex-col md:flex-row justify-between items-center text-lg">
         {" "}
         {/* Increased font size */}
-        <div className="mb-4 md:mb-0 px-2">© 2023 Chatty</div>
+        <div className="mb-4 md:mb-0 px-2">© 2024 Chatty</div>
         <div className="mb-4 md:mb-0">Made with love by Chetan Sirohi</div>
         <div className="flex justify-center px-2 gap-2">
           <a
