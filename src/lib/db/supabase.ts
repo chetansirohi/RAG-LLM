@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { Database } from "../../../@types/supabase";
+import { Database } from "@/types/supabase";
 import { env } from "@/lib/env";
 
 const SUPABASE_URL: string | undefined = env.SUPABASE_URL;
