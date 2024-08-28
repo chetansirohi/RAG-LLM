@@ -9,13 +9,13 @@ import {
 
 interface FileUploadProps {
   onFileSelected: (file: File | null) => void;
-  onTokenReceived: (token: string) => void;
+
   disabled?: boolean;
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({
   onFileSelected,
-  onTokenReceived,
+
   disabled = false,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -52,7 +52,6 @@ const FileUpload: React.FC<FileUploadProps> = ({
         const data = await response.json();
 
         if (response.ok) {
-          onTokenReceived(data.token);
           alert("File uploaded successfully");
           setUploadCompleted(true);
         } else {
@@ -88,26 +87,21 @@ const FileUpload: React.FC<FileUploadProps> = ({
   };
 
   return (
-    <div style={{ position: "relative" }}>
+    <div className="relative">
       {uploading ? (
-        <FontAwesomeIcon
-          icon={faSpinner}
-          spin
-          style={{ position: "absolute", left: "10px", bottom: "10px" }}
-        />
+        <FontAwesomeIcon icon={faSpinner} spin className="text-lg md:text-xl" />
       ) : (
         !fileSelected && (
           <div
             onClick={handleFileUploadClick}
-            style={{
-              position: "absolute",
-              left: "10px",
-              bottom: "10px",
-              cursor: uploadCompleted ? "default" : "pointer",
-              opacity: uploadCompleted ? 0.5 : 1,
-            }}
+            className={`cursor-pointer p-2 rounded-full hover:bg-gray-200 transition-colors ${
+              uploadCompleted ? "opacity-50 cursor-default" : ""
+            }`}
           >
-            <FontAwesomeIcon icon={faPaperclip} />
+            <FontAwesomeIcon
+              icon={faPaperclip}
+              className="text-lg md:text-xl"
+            />
           </div>
         )
       )}
@@ -116,7 +110,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
         type="file"
         ref={fileInputRef}
         onChange={handleFileInputChange}
-        style={{ display: "none" }}
+        className="hidden"
         accept="application/pdf"
         disabled={disabled || uploadCompleted}
       />

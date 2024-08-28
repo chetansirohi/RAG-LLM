@@ -43,3 +43,11 @@ export async function createNewChat(chatsLength: number) {
     return null;
   }
 }
+
+export function adjustTextareaHeight(textarea: HTMLTextAreaElement | null) {
+  if (textarea) {
+    textarea.style.height = "auto";
+    const newHeight = Math.min(textarea.scrollHeight, 200);
+    textarea.style.height = `${newHeight}px`;
+  }
+}
