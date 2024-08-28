@@ -11,7 +11,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { Textarea } from "../ui/textarea";
 import FileUpload from "../ChatBox/UploadFile";
-import { cn } from "@/lib/utils";
+import { cn, adjustTextareaHeight } from "@/lib/utils";
 import { useChat } from "ai/react";
 
 const ChatScreen = () => {
@@ -20,10 +20,7 @@ const ChatScreen = () => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const chatDisplayRef = useRef<HTMLDivElement>(null);
-  const [secureToken, setSecureToken] = useState<String | null>(null);
-  const [sourcesForMessages, setSourcesForMessages] = useState<
-    Record<string, any>
-  >({});
+
   const [uploadDisabled, setUploadDisabled] = useState<boolean>(false);
 
   const {
@@ -34,21 +31,7 @@ const ChatScreen = () => {
     handleSubmit: originalHandleSubmit,
     isLoading,
     append,
-  } = useChat({
-    onResponse: (response) => {
-      const sourcesHeader = response.headers.get("x-sources");
-      const sources = sourcesHeader
-        ? JSON.parse(Buffer.from(sourcesHeader, "base64").toString("utf8"))
-        : [];
-      const messageIndexHeader = response.headers.get("x-message-index");
-      if (sources.length && messageIndexHeader !== null) {
-        setSourcesForMessages((prevSources) => ({
-          ...prevSources,
-          [messageIndexHeader]: sources,
-        }));
-      }
-    },
-  });
+  } = useChat();
 
   const isSubmitEnabled = (input.trim() || pdfFile) && !isLoading;
 
@@ -90,15 +73,11 @@ const ChatScreen = () => {
     setPdfFile(null);
   };
 
-  const handleTokenReceived = (token: string) => {
-    setSecureToken(token);
-  };
-
   const customHandleInputChange = (
     e: React.ChangeEvent<HTMLTextAreaElement>
   ) => {
     handleInputChange(e); // Call the original handleInputChange from useChat
-    adjustTextareaHeight();
+    adjustTextareaHeight(textareaRef.current);
   };
 
   const createNewChat = useCallback(async () => {
@@ -130,41 +109,12 @@ const ChatScreen = () => {
     // Check if there is input or a file has been uploaded
     if (input.trim() || pdfFile) {
       let options = {};
-      if (secureToken) {
-        // Include the secure token in the request options if it exists
-        options = { body: { secureToken } };
-      }
 
       if (!selectedChatId) {
         await createNewChat();
       } else {
         options = { ...options, headers: { "x-chat-id": selectedChatId } };
       }
-
-      // if (selectedChatId) {
-      //   options = { ...options, headers: { "x-chat-id": selectedChatId } };
-      // } else {
-      //   try {
-      //     const response = await fetch("/api/chats", {
-      //       method: "POST",
-      //       headers: {
-      //         "Content-Type": "application/json",
-      //       },
-      //       body: JSON.stringify({
-      //         title: "New Conversation",
-      //       }),
-      //     });
-
-      //     if (response.ok) {
-      //       const newChat = await response.json();
-      //       options = { ...options, headers: { "x-chat-id": newChat.id } };
-      //     } else {
-      //       console.error("Failed to create new chat");
-      //     }
-      //   } catch (error) {
-      //     console.error("Error creating new chat:", error);
-      //   }
-      // }
 
       if (!input.trim() && pdfFile) {
         // If there's no input but a file is uploaded, append a welcoming message
@@ -183,16 +133,6 @@ const ChatScreen = () => {
         textareaRef.current.style.height = "80px";
       }
       setPdfFile(null);
-      setSecureToken(null);
-    }
-  };
-
-  const adjustTextareaHeight = () => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = "auto";
-      const newHeight = Math.min(textarea.scrollHeight, 250);
-      textarea.style.height = `${newHeight}px`;
     }
   };
 
@@ -204,13 +144,12 @@ const ChatScreen = () => {
   };
 
   return (
-    <div className="flex flex-col h-full px-[10%] pt-[5rem] pb-[2.5rem]">
+    <div className="flex flex-col h-full px-4 md:px-[10%] pt-16 md:pt-[5rem] pb-4 md:pb-[2.5rem]">
       <div
-        className="w-[80%] mx-auto flex-grow overflow-auto mb-4 hide-scrollbar"
+        className="w-full md:w-[80%] mx-auto flex-grow overflow-auto mb-4 hide-scrollbar"
         ref={chatDisplayRef}
       >
         {messages.map((msg, index) => {
-          const sources = sourcesForMessages[index.toString()] || [];
           const alignmentClassName =
             msg.role === "user" ? "text-right" : "text-left";
           const colorClassName =
@@ -218,83 +157,73 @@ const ChatScreen = () => {
 
           return (
             <div key={index} className={`p-2 ${alignmentClassName}`}>
-              <div className={`inline-block rounded p-2 ${colorClassName}`}>
+              <div
+                className={`inline-block rounded p-2 ${colorClassName} text-sm md:text-base`}
+              >
                 {msg.content}
               </div>
-              {/* {sources.length > 0 && (
-                <div className="mt-2 text-xs">
-                  <strong>Sources:</strong>
-                  {sources.map((source: any, sourceIndex: number) => (
-                    <div key={sourceIndex}>
-                      {sourceIndex + 1}. "{source.pageContent}"
-                      {source.metadata?.loc?.lines && (
-                        <span>
-                          {" "}
-                          (Lines {source.metadata.loc.lines.from}-
-                          {source.metadata.loc.lines.to})
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )} */}
             </div>
           );
         })}
       </div>
 
       <form
-        className="w-[80%] mx-auto relative pb-1"
+        className="w-full md:w-[80%] mx-auto relative pb-1"
         onSubmit={customHandleSubmit}
       >
         {pdfFile && (
-          <div className="absolute top-3 left-3 flex items-center">
+          <div className="absolute top-2 left-12 md:left-16 flex items-center">
             <FontAwesomeIcon
               icon={faFilePdf}
-              size="2x"
+              size="sm"
               className="text-gray-500 mr-2"
             />
-            <span className="text-gray-500 text-sm">{pdfFile.name}</span>
+            <span className="text-gray-500 text-xs md:text-sm truncate max-w-[150px] md:max-w-[200px]">
+              {pdfFile.name}
+            </span>
             <FontAwesomeIcon
               icon={faTimes}
-              size="1x"
+              size="sm"
               className="text-gray-500 cursor-pointer ml-2"
               onClick={removePdfFile}
             />
           </div>
         )}
-        <Textarea
-          ref={textareaRef}
-          className={cn(
-            "w-full  px-[2rem] py-[1.25rem] border-[-10px] rounded resize-none overflow-hidden hide-scrollbar outline-none "
-          )}
-          placeholder={
-            pdfFile ? "" : "Type your message or upload a file up to 10 mb"
-          }
-          value={input}
-          onKeyDown={handleKeyDown}
-          onChange={customHandleInputChange}
-          style={{ minHeight: "80px", maxHeight: "250px" }}
-          disabled={isLoading} // Disable text area when text is being generated
-        />
-        <FileUpload
-          onFileSelected={handleFileSelected}
-          onTokenReceived={handleTokenReceived}
-          disabled={uploadDisabled}
-        />
-        <Button
-          type="submit"
-          className="absolute right-3 bottom-3 text-gray-500"
-          disabled={!isSubmitEnabled} // Disable submit button when text is being generated
-          style={{
-            outline: "none",
-            border: "none",
-            backgroundColor: "transparent",
-            zIndex: 2,
-          }}
-        >
-          <FontAwesomeIcon icon={faPaperPlane} style={{ fontSize: "1.5em" }} />
-        </Button>
+        <div className="relative">
+          <Textarea
+            ref={textareaRef}
+            className={cn(
+              "w-full px-3 pl-12 pr-12  md:pl-16 md:pr-16  py-2 md:py-[1.25rem] border-[-10px] rounded resize-none overflow-y-auto hide-scrollbar outline-none text-sm md:text-base"
+            )}
+            placeholder={
+              pdfFile ? "" : "Type your message or upload a file up to 10 mb"
+            }
+            value={input}
+            onKeyDown={handleKeyDown}
+            onChange={customHandleInputChange}
+            style={{ minHeight: "60px", maxHeight: "200px" }}
+            disabled={isLoading}
+          />
+          <div className="absolute left-2 md:left-4  top-1/2 -translate-y-1/2 flex items-center">
+            <FileUpload
+              onFileSelected={handleFileSelected}
+              disabled={uploadDisabled}
+            />
+          </div>
+          <Button
+            type="submit"
+            className="absolute right-2 md:right-4   top-1/2 -translate-y-1/2 text-gray-500"
+            disabled={!isSubmitEnabled}
+            style={{
+              outline: "none",
+              border: "none",
+              backgroundColor: "transparent",
+              zIndex: 2,
+            }}
+          >
+            <FontAwesomeIcon icon={faPaperPlane} className="text-xl" />
+          </Button>
+        </div>
       </form>
     </div>
   );
