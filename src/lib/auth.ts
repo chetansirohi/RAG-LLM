@@ -10,9 +10,17 @@ export const { auth, handlers: { GET, POST } } = NextAuth({
         clientId: env.AUTH_GOOGLE_ID,
         clientSecret: env.AUTH_GOOGLE_SECRET,
     })],
+    session: {
+        strategy: "jwt",
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+        updateAge: 24 * 60 * 60, // 24 hours
+    },
     callbacks: {
-        session({ session, user }) {
-            session.user.id = user.id;
+        session({ session, user, token }) {
+            // session.user.id = user.id;
+            if (session.user) {
+                session.user.id = token.sub!;
+            }
             return session;
         },
     },

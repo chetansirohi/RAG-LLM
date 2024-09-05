@@ -10,7 +10,6 @@ export default async function ChatPage() {
 
   if (!session) {
     redirect("/api/auth/signin?callbackUrl=/chat");
-    return null;
   }
 
   return (
