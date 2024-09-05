@@ -39,22 +39,38 @@ const Sidebar = () => {
   }, [session?.user]);
 
   useEffect(() => {
-    refreshChatSessions();
-    const intervalId = setInterval(refreshChatSessions, 60000);
-    return () => clearInterval(intervalId);
-  }, [refreshChatSessions]);
+    if (session?.user) {
+      refreshChatSessions();
+    }
+  }, [session, refreshChatSessions]);
+
+  // useEffect(() => {
+  //   refreshChatSessions();
+  //   const intervalId = setInterval(refreshChatSessions, 60000);
+  //   return () => clearInterval(intervalId);
+  // }, [refreshChatSessions]);
+
+  // const handleNewChat = useCallback(async () => {
+  //   const newChat = await createNewChat(chats.length);
+  //   if (newChat) {
+  //     setChats([newChat, ...chats]);
+  //     setSelectedChatId(newChat.id);
+  //     router.push(`/chat?chatId=${newChat.id}`);
+  //     setIsSidebarOpen(false);
+  //   }
+  // }, [chats, router]);
 
   const handleNewChat = useCallback(async () => {
     const newChat = await createNewChat(chats.length);
     if (newChat) {
-      setChats([newChat, ...chats]);
+      setChats((prevChats) => [newChat, ...prevChats]);
       setSelectedChatId(newChat.id);
       router.push(`/chat?chatId=${newChat.id}`);
       setIsSidebarOpen(false);
     }
-  }, [chats, router]);
+  }, [chats.length, router]);
 
-  const handleChatClick = async (chatId: string) => {
+  const handleChatClick = (chatId: string) => {
     setSelectedChatId(chatId);
     router.push(`/chat?chatId=${chatId}`);
     setIsSidebarOpen(false);

@@ -1,18 +1,20 @@
-// /api/chats/chatId/route.ts
+
 import { auth } from '@/lib/auth';
 import prisma from '@/lib/db/prisma';
 
 export async function GET(request: Request, { params }: { params: { ChatId: string } }) {
+    const session = await auth();
+    if (!session?.user) {
+        return Response.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
     try {
-        const session = await auth();
-        if (!session?.user) {
-            return Response.json({ message: 'Unauthorized' }, { status: 401 });
-        }
-
-
         const chatId = params.ChatId;
         const chatSession = await prisma.chatSession.findUnique({
-            where: { id: chatId },
+            where: {
+                id: chatId,
+                userId: session.user.id // Ensure the chat belongs to the authenticated user
+            },
             include: {
                 messages: {
                     orderBy: { createdAt: 'asc' },
@@ -31,4 +33,3 @@ export async function GET(request: Request, { params }: { params: { ChatId: stri
         return new Response(JSON.stringify({ message: 'Internal Server Error' }), { status: 500 });
     }
 }
-
