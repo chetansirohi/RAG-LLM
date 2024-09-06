@@ -2,23 +2,44 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
-import { cn, fetchChatSessions, createNewChat } from "@/lib/utils";
+import { cn, createNewChat } from "@/lib/utils";
+import { useCustomSession } from "@/hooks/useCustomSession";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { Button } from "../ui/button";
+import useSWR from "swr";
 
 interface Chat {
   id: string;
   title: string;
+  createdAt: string;
 }
 
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
 const Sidebar = () => {
-  const [chats, setChats] = useState<Chat[]>([]);
+  const searchParams = useSearchParams();
+  const initialChatId = searchParams.get("chatId");
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { data: session } = useSession();
+  const { data: session } = useCustomSession();
   const router = useRouter();
+
+  const {
+    data: chats,
+    mutate,
+    error,
+  } = useSWR<Chat[]>(session?.user ? "/api/chats" : null, fetcher, {
+    revalidateOnFocus: false,
+    refreshInterval: 30000, // Refresh every 30 seconds
+  });
+
+  useEffect(() => {
+    if (initialChatId) {
+      setSelectedChatId(initialChatId);
+    }
+  }, [initialChatId]);
 
   const toggleSidebar = useCallback(() => {
     setIsSidebarOpen((prev) => !prev);
@@ -31,44 +52,15 @@ const Sidebar = () => {
     };
   }, [toggleSidebar]);
 
-  const refreshChatSessions = useCallback(async () => {
-    if (session?.user) {
-      const chatSessions = await fetchChatSessions();
-      setChats(chatSessions);
-    }
-  }, [session?.user]);
-
-  useEffect(() => {
-    if (session?.user) {
-      refreshChatSessions();
-    }
-  }, [session, refreshChatSessions]);
-
-  // useEffect(() => {
-  //   refreshChatSessions();
-  //   const intervalId = setInterval(refreshChatSessions, 60000);
-  //   return () => clearInterval(intervalId);
-  // }, [refreshChatSessions]);
-
-  // const handleNewChat = useCallback(async () => {
-  //   const newChat = await createNewChat(chats.length);
-  //   if (newChat) {
-  //     setChats([newChat, ...chats]);
-  //     setSelectedChatId(newChat.id);
-  //     router.push(`/chat?chatId=${newChat.id}`);
-  //     setIsSidebarOpen(false);
-  //   }
-  // }, [chats, router]);
-
   const handleNewChat = useCallback(async () => {
-    const newChat = await createNewChat(chats.length);
+    const newChat = await createNewChat(chats ? chats.length : 0);
     if (newChat) {
-      setChats((prevChats) => [newChat, ...prevChats]);
+      mutate([newChat, ...(chats || [])], false);
       setSelectedChatId(newChat.id);
       router.push(`/chat?chatId=${newChat.id}`);
       setIsSidebarOpen(false);
     }
-  }, [chats.length, router]);
+  }, [chats, mutate, router]);
 
   const handleChatClick = (chatId: string) => {
     setSelectedChatId(chatId);
@@ -104,19 +96,24 @@ const Sidebar = () => {
             New Chat
           </Button>
 
-          <ul>
-            {chats.map((chat) => (
-              <li
-                key={chat.id}
-                className={`flex justify-between items-center mb-2 p-2 rounded cursor-pointer ${
-                  chat.id === selectedChatId ? "bg-blue-200" : "bg-gray-100"
-                }`}
-                onClick={() => handleChatClick(chat.id)}
-              >
-                <span>{chat.title}</span>
-              </li>
-            ))}
-          </ul>
+          {error && <p>Failed to load chats.</p>}
+          {!chats && !error && <p>Loading chats...</p>}
+          {chats && chats.length === 0 && <p>No chats available.</p>}
+          {chats && chats.length > 0 && (
+            <ul>
+              {chats.map((chat) => (
+                <li
+                  key={chat.id}
+                  className={`flex justify-between items-center mb-2 p-2 rounded cursor-pointer ${
+                    chat.id === selectedChatId ? "bg-blue-200" : "bg-gray-100"
+                  }`}
+                  onClick={() => handleChatClick(chat.id)}
+                >
+                  <span>{chat.title}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 

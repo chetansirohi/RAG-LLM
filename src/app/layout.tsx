@@ -22,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <SessionProvider refetchInterval={5 * 60}>
+        <SessionProvider refetchInterval={0} refetchOnWindowFocus={false}>
           <link rel="icon" href="/favicon.ico" sizes="any" />
           <Navbar />
           {children}
