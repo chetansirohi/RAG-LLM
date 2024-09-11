@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
-import { cn, createNewChat } from "@/lib/utils";
+import { cn, createNewChat } from "@/lib/frontendUtils";
 import { useCustomSession } from "@/hooks/useCustomSession";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";

@@ -11,7 +11,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { Textarea } from "../ui/textarea";
 import FileUpload from "../ChatBox/UploadFile";
-import { cn, adjustTextareaHeight } from "@/lib/utils";
+import { cn, adjustTextareaHeight } from "@/lib/frontendUtils";
 import { useChat } from "ai/react";
 
 const ChatScreen = () => {
