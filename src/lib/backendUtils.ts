@@ -6,6 +6,8 @@ import { formatDocumentsAsString } from "langchain/util/document";
 import client from "@/lib/db/supabase";
 import prisma from '@/lib/db/prisma';
 import { env } from "@/lib/env";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export const formatVercelMessages = (chatHistory: VercelChatMessage[]) => {
     return chatHistory.map((message) => {
@@ -76,3 +78,47 @@ export const getChatHistory = async (chatId: string) => {
         content: msg.content,
     }));
 };
+
+const s3Client = new S3Client({
+    region: env.AWS_REGION,
+    credentials: {
+        accessKeyId: env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
+    },
+});
+
+export async function generateFileName(userId: string, originalName: string): Promise<string> {
+    const timestamp = new Date().getTime();
+    return `${userId}-${timestamp}-${originalName}`;
+}
+
+export async function getSignedURL(fileType: string, fileSize: number, checksum: string, fileName: string): Promise<string> {
+    const command = new PutObjectCommand({
+        Bucket: env.AWS_S3_BUCKET,
+        Key: fileName,
+        ContentType: fileType,
+        ContentLength: fileSize,
+        ChecksumSHA256: checksum,
+    });
+    return await getSignedUrl(s3Client, command, { expiresIn: 150 });
+}
+
+export async function saveFileRecord(fileName: string, fileUrl: string, checksum: string, userId: string, secureToken: string) {
+    return await prisma.file.create({
+        data: {
+            fileName,
+            fileUrl,
+            checksum,
+            userId,
+            isProcessed: false,
+            secureToken,
+        },
+    });
+}
+
+export async function markFileAsProcessed(secureToken: string) {
+    await prisma.file.update({
+        where: { secureToken: secureToken },
+        data: { isProcessed: true },
+    });
+}
