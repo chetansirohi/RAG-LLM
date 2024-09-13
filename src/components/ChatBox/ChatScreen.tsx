@@ -2,7 +2,7 @@
 "use client";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "../ui/button";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPaperPlane,
@@ -16,6 +16,7 @@ import { useChat } from "ai/react";
 
 const ChatScreen = () => {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const selectedChatId = searchParams.get("chatId");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -31,7 +32,12 @@ const ChatScreen = () => {
     handleSubmit: originalHandleSubmit,
     isLoading,
     append,
-  } = useChat();
+    setMessages,
+  } = useChat({
+    id: selectedChatId || undefined,
+    initialMessages: [],
+    api: "/api/chat",
+  });
 
   const isSubmitEnabled = (input.trim() || pdfFile) && !isLoading;
 
@@ -49,10 +55,19 @@ const ChatScreen = () => {
           const response = await fetch(`/api/chats/${selectedChatId}`);
           if (response.ok) {
             const chatSession = await response.json();
-            const uploadedFile = chatSession.messages.find(
-              (msg: any) => msg.file !== null
+            // const uploadedFile = chatSession.messages.find(
+            //   (msg: any) => msg.file !== null
+            // );
+            // setUploadDisabled(uploadedFile !== undefined);
+            const chatMessages = chatSession.messages.map((msg: any) => ({
+              id: msg.id,
+              content: msg.content,
+              role: msg.role,
+            }));
+            setMessages(chatMessages);
+            setUploadDisabled(
+              chatSession.messages.some((msg: any) => msg.file !== null)
             );
-            setUploadDisabled(uploadedFile !== undefined);
           } else {
             console.error("Failed to fetch chat session");
           }
@@ -63,7 +78,7 @@ const ChatScreen = () => {
     };
 
     fetchChatMessages();
-  }, [selectedChatId]);
+  }, [selectedChatId, setMessages]);
 
   const handleFileSelected = (file: File | null) => {
     setPdfFile(file);
@@ -88,51 +103,148 @@ const ChatScreen = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          title: "Conversation 1",
+          title: "New Conversation",
         }),
       });
 
       if (response.ok) {
+        // const newChat = await response.json();
+        // // Redirect to the new chat page
+        // window.location.href = `/chat?chatId=${newChat.id}`;
         const newChat = await response.json();
-        // Redirect to the new chat page
-        window.location.href = `/chat?chatId=${newChat.id}`;
+        router.push(`/chat?chatId=${newChat.id}`);
+        return newChat.id;
       } else {
         console.error("Failed to create new chat");
       }
     } catch (error) {
       console.error("Error creating new chat:", error);
     }
-  }, []);
+  }, [router]);
+
+  // const customHandleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  //   e.preventDefault();
+  //   let currentChatId = selectedChatId;
+
+  //   if (input.trim() || pdfFile) {
+  //     if (!currentChatId) {
+  //       currentChatId = await createNewChat();
+  //     }
+
+  //     if (currentChatId) {
+  //       let options = { headers: { "x-chat-id": currentChatId } };
+
+  //       if (pdfFile) {
+  //         const formData = new FormData();
+  //         formData.append("file", pdfFile);
+  //         formData.append("chatId", currentChatId);
+
+  //         try {
+  //           const uploadResponse = await fetch("/api/upload", {
+  //             method: "POST",
+  //             body: formData,
+  //           });
+
+  //           if (uploadResponse.ok) {
+  //             await append(
+  //               {
+  //                 content: "File Processed Successfully",
+  //                 role: "system",
+  //               },
+  //               { options }
+  //             );
+  //           } else {
+  //             console.error("Failed to upload file");
+  //           }
+  //         } catch (error) {
+  //           console.error("Error uploading file:", error);
+  //         }
+  //       }
+
+  //       if (input.trim()) {
+  //         await originalHandleSubmit(e, { options });
+  //       }
+
+  //       // Fetch updated messages after submission
+  //       const response = await fetch(`/api/chats/${currentChatId}`);
+  //       if (response.ok) {
+  //         const chatSession = await response.json();
+  //         const chatMessages = chatSession.messages.map((msg: any) => ({
+  //           id: msg.id,
+  //           content: msg.content,
+  //           role: msg.role,
+  //         }));
+  //         setMessages(chatMessages);
+  //       }
+
+  //       if (textareaRef.current) {
+  //         textareaRef.current.style.height = "80px";
+  //       }
+  //       setPdfFile(null);
+  //     }
+  //   }
+  // };
 
   const customHandleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Check if there is input or a file has been uploaded
+
     if (input.trim() || pdfFile) {
-      let options = {};
+      const newChatId = await createNewChat();
 
-      if (!selectedChatId) {
-        await createNewChat();
-      } else {
-        options = { ...options, headers: { "x-chat-id": selectedChatId } };
-      }
+      if (newChatId) {
+        let options = { headers: { "x-chat-id": newChatId } };
 
-      if (!input.trim() && pdfFile) {
-        // If there's no input but a file is uploaded, append a welcoming message
-        // and send the secureToken to the API
-        await append(
-          {
-            content: "File Processed Successfully",
-            role: "system",
-          },
-          { options }
-        );
-      } else {
-        originalHandleSubmit(e, { options });
+        if (pdfFile) {
+          const formData = new FormData();
+          formData.append("file", pdfFile);
+          formData.append("chatId", newChatId);
+
+          try {
+            const uploadResponse = await fetch("/api/upload", {
+              method: "POST",
+              body: formData,
+            });
+
+            if (uploadResponse.ok) {
+              await append(
+                {
+                  content: "File Processed Successfully",
+                  role: "system",
+                },
+                { options }
+              );
+            } else {
+              console.error("Failed to upload file");
+            }
+          } catch (error) {
+            console.error("Error uploading file:", error);
+          }
+        }
+
+        if (input.trim()) {
+          await originalHandleSubmit(e, { options });
+        }
+
+        // Fetch updated messages after submission
+        const response = await fetch(`/api/chats/${newChatId}`);
+        if (response.ok) {
+          const chatSession = await response.json();
+          const chatMessages = chatSession.messages.map((msg: any) => ({
+            id: msg.id,
+            content: msg.content,
+            role: msg.role,
+          }));
+          setMessages(chatMessages);
+        }
+
+        if (textareaRef.current) {
+          textareaRef.current.style.height = "80px";
+        }
+        setPdfFile(null);
+
+        // Trigger a refresh of the sidebar
+        window.dispatchEvent(new CustomEvent("refreshSidebar"));
       }
-      if (textareaRef.current) {
-        textareaRef.current.style.height = "80px";
-      }
-      setPdfFile(null);
     }
   };
 
