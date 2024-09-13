@@ -62,6 +62,18 @@ const Sidebar = () => {
     }
   }, [chats, mutate, router]);
 
+  useEffect(() => {
+    const handleRefreshSidebar = () => {
+      mutate();
+    };
+
+    window.addEventListener("refreshSidebar", handleRefreshSidebar);
+
+    return () => {
+      window.removeEventListener("refreshSidebar", handleRefreshSidebar);
+    };
+  }, [mutate]);
+
   const handleChatClick = (chatId: string) => {
     setSelectedChatId(chatId);
     router.push(`/chat?chatId=${chatId}`);
