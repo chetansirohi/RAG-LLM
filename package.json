@@ -48,7 +48,7 @@
     "mongoose": "^8.0.3",
     "multiparty": "^4.2.3",
     "next": "^14.2.3",
-    "next-auth": "^5.0.0-beta.15",
+    "next-auth": "^5.0.0-beta.21",
     "openai": "^4.24.1",
     "pdf-parse": "^1.1.1",
     "pdfjs-dist": "^2.16.105",
