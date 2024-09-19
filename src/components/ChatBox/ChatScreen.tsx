@@ -1,4 +1,3 @@
-//working code
 "use client";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "../ui/button";
@@ -19,7 +18,7 @@ const ChatScreen = () => {
   const router = useRouter();
   const selectedChatId = searchParams.get("chatId");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  // const [pdfFile, setPdfFile] = useState<File | null>(null);
   const chatDisplayRef = useRef<HTMLDivElement>(null);
 
   const [uploadDisabled, setUploadDisabled] = useState<boolean>(false);
@@ -31,7 +30,7 @@ const ChatScreen = () => {
     handleInputChange,
     handleSubmit: originalHandleSubmit,
     isLoading,
-    append,
+    // append,
     setMessages,
   } = useChat({
     id: selectedChatId || undefined,
@@ -39,7 +38,7 @@ const ChatScreen = () => {
     api: "/api/chat",
   });
 
-  const isSubmitEnabled = (input.trim() || pdfFile) && !isLoading;
+  const isSubmitEnabled = input.trim() && !isLoading;
 
   useEffect(() => {
     // Auto-scroll to the bottom whenever messages update or isLoading changes
@@ -55,10 +54,6 @@ const ChatScreen = () => {
           const response = await fetch(`/api/chats/${selectedChatId}`);
           if (response.ok) {
             const chatSession = await response.json();
-            // const uploadedFile = chatSession.messages.find(
-            //   (msg: any) => msg.file !== null
-            // );
-            // setUploadDisabled(uploadedFile !== undefined);
             const chatMessages = chatSession.messages.map((msg: any) => ({
               id: msg.id,
               content: msg.content,
@@ -80,13 +75,13 @@ const ChatScreen = () => {
     fetchChatMessages();
   }, [selectedChatId, setMessages]);
 
-  const handleFileSelected = (file: File | null) => {
-    setPdfFile(file);
-  };
+  // const handleFileSelected = (file: File | null) => {
+  //   setPdfFile(file);
+  // };
 
-  const removePdfFile = () => {
-    setPdfFile(null);
-  };
+  // const removePdfFile = () => {
+  //   setPdfFile(null);
+  // };
 
   const customHandleInputChange = (
     e: React.ChangeEvent<HTMLTextAreaElement>
@@ -108,9 +103,6 @@ const ChatScreen = () => {
       });
 
       if (response.ok) {
-        // const newChat = await response.json();
-        // // Redirect to the new chat page
-        // window.location.href = `/chat?chatId=${newChat.id}`;
         const newChat = await response.json();
         router.push(`/chat?chatId=${newChat.id}`);
         return newChat.id;
@@ -122,111 +114,21 @@ const ChatScreen = () => {
     }
   }, [router]);
 
-  // const customHandleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-  //   e.preventDefault();
-  //   let currentChatId = selectedChatId;
-
-  //   if (input.trim() || pdfFile) {
-  //     if (!currentChatId) {
-  //       currentChatId = await createNewChat();
-  //     }
-
-  //     if (currentChatId) {
-  //       let options = { headers: { "x-chat-id": currentChatId } };
-
-  //       if (pdfFile) {
-  //         const formData = new FormData();
-  //         formData.append("file", pdfFile);
-  //         formData.append("chatId", currentChatId);
-
-  //         try {
-  //           const uploadResponse = await fetch("/api/upload", {
-  //             method: "POST",
-  //             body: formData,
-  //           });
-
-  //           if (uploadResponse.ok) {
-  //             await append(
-  //               {
-  //                 content: "File Processed Successfully",
-  //                 role: "system",
-  //               },
-  //               { options }
-  //             );
-  //           } else {
-  //             console.error("Failed to upload file");
-  //           }
-  //         } catch (error) {
-  //           console.error("Error uploading file:", error);
-  //         }
-  //       }
-
-  //       if (input.trim()) {
-  //         await originalHandleSubmit(e, { options });
-  //       }
-
-  //       // Fetch updated messages after submission
-  //       const response = await fetch(`/api/chats/${currentChatId}`);
-  //       if (response.ok) {
-  //         const chatSession = await response.json();
-  //         const chatMessages = chatSession.messages.map((msg: any) => ({
-  //           id: msg.id,
-  //           content: msg.content,
-  //           role: msg.role,
-  //         }));
-  //         setMessages(chatMessages);
-  //       }
-
-  //       if (textareaRef.current) {
-  //         textareaRef.current.style.height = "80px";
-  //       }
-  //       setPdfFile(null);
-  //     }
-  //   }
-  // };
-
   const customHandleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (input.trim() || pdfFile) {
-      const newChatId = await createNewChat();
+    if (input.trim()) {
+      let currentChatId = selectedChatId;
 
-      if (newChatId) {
-        let options = { headers: { "x-chat-id": newChatId } };
+      if (!currentChatId) {
+        currentChatId = await createNewChat();
+      }
 
-        if (pdfFile) {
-          const formData = new FormData();
-          formData.append("file", pdfFile);
-          formData.append("chatId", newChatId);
+      if (currentChatId) {
+        let options = { headers: { "x-chat-id": currentChatId } };
+        await originalHandleSubmit(e, { options });
 
-          try {
-            const uploadResponse = await fetch("/api/upload", {
-              method: "POST",
-              body: formData,
-            });
-
-            if (uploadResponse.ok) {
-              await append(
-                {
-                  content: "File Processed Successfully",
-                  role: "system",
-                },
-                { options }
-              );
-            } else {
-              console.error("Failed to upload file");
-            }
-          } catch (error) {
-            console.error("Error uploading file:", error);
-          }
-        }
-
-        if (input.trim()) {
-          await originalHandleSubmit(e, { options });
-        }
-
-        // Fetch updated messages after submission
-        const response = await fetch(`/api/chats/${newChatId}`);
+        const response = await fetch(`/api/chats/${currentChatId}`);
         if (response.ok) {
           const chatSession = await response.json();
           const chatMessages = chatSession.messages.map((msg: any) => ({
@@ -236,15 +138,15 @@ const ChatScreen = () => {
           }));
           setMessages(chatMessages);
         }
-
-        if (textareaRef.current) {
-          textareaRef.current.style.height = "80px";
-        }
-        setPdfFile(null);
-
-        // Trigger a refresh of the sidebar
-        window.dispatchEvent(new CustomEvent("refreshSidebar"));
       }
+
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "80px";
+      }
+      // setPdfFile(null);
+
+      // Trigger a refresh of the sidebar
+      window.dispatchEvent(new CustomEvent("refreshSidebar"));
     }
   };
 
@@ -283,7 +185,7 @@ const ChatScreen = () => {
         className="w-full md:w-[80%] mx-auto relative pb-1"
         onSubmit={customHandleSubmit}
       >
-        {pdfFile && (
+        {/* {pdfFile && (
           <div className="absolute top-2 left-12 md:left-16 flex items-center">
             <FontAwesomeIcon
               icon={faFilePdf}
@@ -300,16 +202,14 @@ const ChatScreen = () => {
               onClick={removePdfFile}
             />
           </div>
-        )}
+        )} */}
         <div className="relative">
           <Textarea
             ref={textareaRef}
             className={cn(
               "w-full px-3 pl-12 pr-12  md:pl-16 md:pr-16  py-2 md:py-[1.25rem] border-[-10px] rounded resize-none overflow-y-auto hide-scrollbar outline-none text-sm md:text-base"
             )}
-            placeholder={
-              pdfFile ? "" : "Type your message or upload a file up to 10 mb"
-            }
+            placeholder="Type your message or upload a file up to 10 mb"
             value={input}
             onKeyDown={handleKeyDown}
             onChange={customHandleInputChange}
@@ -318,8 +218,9 @@ const ChatScreen = () => {
           />
           <div className="absolute left-2 md:left-4  top-1/2 -translate-y-1/2 flex items-center">
             <FileUpload
-              onFileSelected={handleFileSelected}
+              onFileSelected={() => {}}
               disabled={uploadDisabled}
+              chatSessionId={selectedChatId}
             />
           </div>
           <Button

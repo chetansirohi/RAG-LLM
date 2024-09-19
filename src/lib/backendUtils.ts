@@ -8,6 +8,7 @@ import prisma from '@/lib/db/prisma';
 import { env } from "@/lib/env";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { DocumentInterface } from "@langchain/core/documents";
 
 export const formatVercelMessages = (chatHistory: VercelChatMessage[]) => {
     return chatHistory.map((message) => {
@@ -42,11 +43,16 @@ export const getSupabaseRetriever = () => {
     });
 };
 
-export const getRelevantDocuments = async (content: string) => {
+export const getRelevantDocuments = async (content: string, chatSessionId: string): Promise<DocumentInterface[]> => {
     try {
         const retriever = getSupabaseRetriever();
         const documents = await retriever.invoke(content);
-        return formatDocumentsAsString(documents);
+        return documents.filter(doc => {
+            const docChatSessionId = doc.metadata?.chatSessionId;
+            return Array.isArray(docChatSessionId)
+                ? docChatSessionId.includes(chatSessionId)
+                : docChatSessionId === chatSessionId;
+        });
     } catch (error) {
         console.error('Error retrieving relevant documents:', error);
         throw error;
@@ -103,7 +109,7 @@ export async function getSignedURL(fileType: string, fileSize: number, checksum:
     return await getSignedUrl(s3Client, command, { expiresIn: 150 });
 }
 
-export async function saveFileRecord(fileName: string, fileUrl: string, checksum: string, userId: string, secureToken: string) {
+export async function saveFileRecord(fileName: string, fileUrl: string, checksum: string, userId: string, secureToken: string, chatSessionId: string) {
     return await prisma.file.create({
         data: {
             fileName,
@@ -112,6 +118,7 @@ export async function saveFileRecord(fileName: string, fileUrl: string, checksum
             userId,
             isProcessed: false,
             secureToken,
+            chatSessionIds: [chatSessionId],
         },
     });
 }

@@ -64,17 +64,19 @@ model VerificationToken {
 }
 
 model File {
-    id          String        @id @default(auto()) @map("_id") @db.ObjectId
-    fileName    String        @unique
-    fileUrl     String        @unique
-    checksum    String
-    secureToken String        @unique
-    isProcessed Boolean       @default(false)
-    createdAt   DateTime      @default(now()) @map("createdAt")
-    updatedAt   DateTime      @updatedAt @map("updatedAt")
-    userId      String        @db.ObjectId
-    user        User          @relation(fields: [userId], references: [id])
-    ChatMessage ChatMessage[]
+    id             String        @id @default(auto()) @map("_id") @db.ObjectId
+    fileName       String        @unique
+    fileUrl        String        @unique
+    checksum       String
+    secureToken    String        @unique
+    isProcessed    Boolean       @default(false)
+    createdAt      DateTime      @default(now()) @map("createdAt")
+    updatedAt      DateTime      @updatedAt @map("updatedAt")
+    userId         String        @db.ObjectId
+    user           User          @relation(fields: [userId], references: [id])
+    ChatMessage    ChatMessage[]
+    chatSessions   ChatSession[] @relation(fields: [chatSessionIds], references: [id])
+    chatSessionIds String[]      @db.ObjectId
 
     @@map("files")
 }
@@ -104,6 +106,8 @@ model ChatSession {
     createdAt DateTime      @default(now())
     updatedAt DateTime      @updatedAt
     user      User          @relation(fields: [userId], references: [id])
+    files     File[]        @relation(fields: [fileIds], references: [id])
+    fileIds   String[]      @db.ObjectId
 
     @@index([userId])
 }
