@@ -8,6 +8,7 @@ import { DocumentInterface } from "@langchain/core/documents";
 import { openai } from '@ai-sdk/openai'
 import { formatVercelMessages, getRelevantDocuments, storeMessage, getChatHistory } from '@/lib/backendUtils';
 import { env } from "@/lib/env";
+import { formatDocumentsAsString } from 'langchain/util/document';
 
 export const runtime = 'edge';
 
@@ -56,7 +57,8 @@ export async function POST(req: Request, res: Response) {
             return Response.json({ error: "No chat ID provided" }, { status: 400 });
         }
 
-        const relevantDocuments = await getRelevantDocuments(currentMessageContent);
+        const relevantDocuments = await getRelevantDocuments(currentMessageContent, chatId);
+        const formattedDocuments = formatDocumentsAsString(relevantDocuments);
         const chatHistory = await getChatHistory(chatId);
 
         const model = new ChatOpenAI({
@@ -78,7 +80,7 @@ export async function POST(req: Request, res: Response) {
 
         const answerChain = RunnableSequence.from([
             {
-                context: (input) => relevantDocuments,
+                context: (input) => formattedDocuments,
                 chat_history: (input) => input.chat_history,
                 question: (input) => input.question,
             },
