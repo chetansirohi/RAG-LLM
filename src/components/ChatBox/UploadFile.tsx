@@ -6,6 +6,7 @@ import {
   faSpinner,
   faTimes,
   faUpload,
+  faFilePdf,
 } from "@fortawesome/free-solid-svg-icons";
 
 interface FileUploadProps {
@@ -23,55 +24,16 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const [uploading, setUploading] = useState<boolean>(false);
   const [fileSelected, setFileSelected] = useState<boolean>(false);
   const [uploadCompleted, setUploadCompleted] = useState<boolean>(false);
+  const [selectedFileName, setSelectedFileName] = useState<string>("");
 
   const resetFileInput = () => {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
       setFileSelected(false);
+      setSelectedFileName("");
+      onFileSelected(null);
     }
   };
-
-  // const handleFileInputChange = async (e: ChangeEvent<HTMLInputElement>) => {
-  //   const selectedFile = e.target.files?.[0];
-  //   if (!selectedFile) {
-  //     return;
-  //   }
-
-  //   if (selectedFile.type === "application/pdf") {
-  //     setFileSelected(true);
-  //     onFileSelected(selectedFile);
-  //     setUploading(true);
-
-  //     const formData = new FormData();
-  //     formData.append("file", selectedFile);
-
-  //     try {
-  //       const response = await fetch("/api/upload", {
-  //         method: "POST",
-  //         body: formData,
-  //       });
-  //       const data = await response.json();
-
-  //       if (response.ok) {
-  //         alert("File uploaded successfully");
-  //         setUploadCompleted(true);
-  //       } else {
-  //         alert("Upload failed: " + data.message);
-  //       }
-  //     } catch (error) {
-  //       console.error("Error uploading file:", error);
-  //       alert("Error uploading file");
-  //     } finally {
-  //       setUploading(false);
-  //       setFileSelected(false);
-  //       resetFileInput(); // Reset input field after upload or error
-  //     }
-  //   } else {
-  //     alert("Only PDF files are allowed");
-  //     onFileSelected(null);
-  //     resetFileInput(); // Reset input field if not a PDF
-  //   }
-  // };
 
   const handleFileInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -81,6 +43,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
     if (selectedFile.type === "application/pdf") {
       setFileSelected(true);
+      setSelectedFileName(selectedFile.name);
       onFileSelected(selectedFile);
     } else {
       alert("Only PDF files are allowed");
@@ -106,26 +69,27 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
       if (response.ok) {
         alert("File uploaded successfully");
+        resetFileInput();
         setUploadCompleted(true);
       } else {
         alert("Upload failed: " + data.message);
+        resetFileInput();
       }
     } catch (error) {
       console.error("Error uploading file:", error);
       alert("Error uploading file");
+      resetFileInput();
     } finally {
       setUploading(false);
-      setFileSelected(false);
-      resetFileInput();
     }
   };
 
-  // const handleRemoveFile = () => {
-  //   setFileSelected(false);
-  //   onFileSelected(null);
-  //   resetFileInput(); // Reset file input when file is removed
-  //   setUploadCompleted(false);
-  // };
+  const handleRemoveFile = () => {
+    setFileSelected(false);
+    onFileSelected(null);
+    resetFileInput(); // Reset file input when file is removed
+    setUploadCompleted(false);
+  };
 
   const handleFileUploadClick = () => {
     if (!uploadCompleted && !disabled) {
@@ -134,50 +98,33 @@ const FileUpload: React.FC<FileUploadProps> = ({
     }
   };
 
-  //   return (
-  //     <div className="relative">
-  //       {uploading ? (
-  //         <FontAwesomeIcon icon={faSpinner} spin className="text-lg md:text-xl" />
-  //       ) : (
-  //         !fileSelected && (
-  //           <div
-  //             onClick={handleFileUploadClick}
-  //             className={`cursor-pointer p-2 rounded-full hover:bg-gray-200 transition-colors ${
-  //               uploadCompleted ? "opacity-50 cursor-default" : ""
-  //             }`}
-  //           >
-  //             <FontAwesomeIcon
-  //               icon={faPaperclip}
-  //               className="text-lg md:text-xl"
-  //             />
-  //           </div>
-  //         )
-  //       )}
-
-  //       <input
-  //         type="file"
-  //         ref={fileInputRef}
-  //         onChange={handleFileInputChange}
-  //         className="hidden"
-  //         accept="application/pdf"
-  //         disabled={disabled || uploadCompleted}
-  //       />
-  //     </div>
-  //   );
-  // };
-
   return (
-    <div className="relative">
+    <div className="relative flex items-center space-x-2">
       {uploading ? (
         <FontAwesomeIcon icon={faSpinner} spin className="text-lg md:text-xl" />
       ) : fileSelected ? (
-        <button
-          onClick={handleUpload}
-          disabled={!chatSessionId}
-          className="text-blue-500 hover:text-blue-700"
-        >
-          <FontAwesomeIcon icon={faUpload} className="text-lg md:text-xl" />
-        </button>
+        <>
+          <FontAwesomeIcon
+            icon={faFilePdf}
+            className="text-lg md:text-xl text-gray-500 "
+          />
+          <span className="text-sm truncate max-w-[100px] md:max-w-[150px]">
+            {selectedFileName}
+          </span>
+          <button
+            onClick={handleRemoveFile}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <FontAwesomeIcon icon={faTimes} className="text-lg md:text-xl" />
+          </button>
+          <button
+            onClick={handleUpload}
+            disabled={!chatSessionId}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <FontAwesomeIcon icon={faUpload} className="text-lg md:text-xl" />
+          </button>
+        </>
       ) : (
         <div
           onClick={handleFileUploadClick}

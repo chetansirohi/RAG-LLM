@@ -48,10 +48,8 @@ export const getRelevantDocuments = async (content: string, chatSessionId: strin
         const retriever = getSupabaseRetriever();
         const documents = await retriever.invoke(content);
         return documents.filter(doc => {
-            const docChatSessionId = doc.metadata?.chatSessionId;
-            return Array.isArray(docChatSessionId)
-                ? docChatSessionId.includes(chatSessionId)
-                : docChatSessionId === chatSessionId;
+            const docChatSessionIds = doc.metadata?.chatSessionIds;
+            return Array.isArray(docChatSessionIds) && docChatSessionIds.includes(chatSessionId);
         });
     } catch (error) {
         console.error('Error retrieving relevant documents:', error);

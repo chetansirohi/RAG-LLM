@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "../ui/button";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPaperPlane,
@@ -15,22 +15,20 @@ import { useChat } from "ai/react";
 
 const ChatScreen = () => {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const isOnChatPage = pathname === "/chat";
   const router = useRouter();
   const selectedChatId = searchParams.get("chatId");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  // const [pdfFile, setPdfFile] = useState<File | null>(null);
   const chatDisplayRef = useRef<HTMLDivElement>(null);
-
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [uploadDisabled, setUploadDisabled] = useState<boolean>(false);
-
   const {
     messages,
     input,
-    setInput,
     handleInputChange,
     handleSubmit: originalHandleSubmit,
     isLoading,
-    // append,
     setMessages,
   } = useChat({
     id: selectedChatId || undefined,
@@ -74,14 +72,6 @@ const ChatScreen = () => {
 
     fetchChatMessages();
   }, [selectedChatId, setMessages]);
-
-  // const handleFileSelected = (file: File | null) => {
-  //   setPdfFile(file);
-  // };
-
-  // const removePdfFile = () => {
-  //   setPdfFile(null);
-  // };
 
   const customHandleInputChange = (
     e: React.ChangeEvent<HTMLTextAreaElement>
@@ -136,14 +126,12 @@ const ChatScreen = () => {
             content: msg.content,
             role: msg.role,
           }));
-          setMessages(chatMessages);
         }
       }
 
       if (textareaRef.current) {
         textareaRef.current.style.height = "80px";
       }
-      // setPdfFile(null);
 
       // Trigger a refresh of the sidebar
       window.dispatchEvent(new CustomEvent("refreshSidebar"));
@@ -185,31 +173,15 @@ const ChatScreen = () => {
         className="w-full md:w-[80%] mx-auto relative pb-1"
         onSubmit={customHandleSubmit}
       >
-        {/* {pdfFile && (
-          <div className="absolute top-2 left-12 md:left-16 flex items-center">
-            <FontAwesomeIcon
-              icon={faFilePdf}
-              size="sm"
-              className="text-gray-500 mr-2"
-            />
-            <span className="text-gray-500 text-xs md:text-sm truncate max-w-[150px] md:max-w-[200px]">
-              {pdfFile.name}
-            </span>
-            <FontAwesomeIcon
-              icon={faTimes}
-              size="sm"
-              className="text-gray-500 cursor-pointer ml-2"
-              onClick={removePdfFile}
-            />
-          </div>
-        )} */}
         <div className="relative">
           <Textarea
             ref={textareaRef}
             className={cn(
               "w-full px-3 pl-12 pr-12  md:pl-16 md:pr-16  py-2 md:py-[1.25rem] border-[-10px] rounded resize-none overflow-y-auto hide-scrollbar outline-none text-sm md:text-base"
             )}
-            placeholder="Type your message or upload a file up to 10 mb"
+            placeholder={
+              pdfFile ? "" : "Type your message or upload a file up to 10 mb"
+            }
             value={input}
             onKeyDown={handleKeyDown}
             onChange={customHandleInputChange}
@@ -218,8 +190,8 @@ const ChatScreen = () => {
           />
           <div className="absolute left-2 md:left-4  top-1/2 -translate-y-1/2 flex items-center">
             <FileUpload
-              onFileSelected={() => {}}
-              disabled={uploadDisabled}
+              onFileSelected={(file) => setPdfFile(file)}
+              disabled={uploadDisabled || (isOnChatPage && !selectedChatId)}
               chatSessionId={selectedChatId}
             />
           </div>
