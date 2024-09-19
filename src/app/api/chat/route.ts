@@ -58,7 +58,9 @@ export async function POST(req: Request, res: Response) {
         }
 
         const relevantDocuments = await getRelevantDocuments(currentMessageContent, chatId);
+        console.log('Retrieved documents:', relevantDocuments);
         const formattedDocuments = formatDocumentsAsString(relevantDocuments);
+        console.log('Formatted documents:', formattedDocuments);
         const chatHistory = await getChatHistory(chatId);
 
         const model = new ChatOpenAI({
@@ -66,7 +68,7 @@ export async function POST(req: Request, res: Response) {
             modelName: "gpt-3.5-turbo",
             openAIApiKey: env.OPENAI_API_KEY,
         });
-        console.log("Model initialized successfully");
+        // console.log("Model initialized successfully");
 
 
         const standaloneQuestionChain = RunnableSequence.from([
@@ -107,8 +109,8 @@ export async function POST(req: Request, res: Response) {
                 chat_history: formatVercelMessages(formattedPreviousMessages),
             });
 
-            console.log('System content type:', typeof systemContent);
-            console.log('System content:', systemContent);
+            // console.log('System content type:', typeof systemContent);
+            // console.log('System content:', systemContent);
 
             const decodedSystemContent = systemContent instanceof Uint8Array
                 ? new TextDecoder().decode(systemContent)
@@ -132,11 +134,15 @@ export async function POST(req: Request, res: Response) {
                 }
             });
 
-            console.log("Stream completed successfully");
+            // console.log("Stream completed successfully");
             return result.toDataStreamResponse();
-        } catch (streamError) {
-            console.error("Error in streamText or chain invocation:", streamError);
-            return Response.json({ error: "Error processing request", details: streamError.message }, { status: 500 });
+        } catch (error) {
+            console.error("Error in streamText or chain invocation:", error);
+            if (error instanceof Error) {
+                return Response.json({ error: "Error processing request", details: error.message }, { status: 500 });
+            } else {
+                return Response.json({ error: "Unknown error occurred" }, { status: 500 });
+            }
         }
 
     } catch (e) {
