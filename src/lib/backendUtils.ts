@@ -1,14 +1,14 @@
 
 import { Message as VercelChatMessage } from 'ai';
-import { SupabaseHybridSearch } from "@langchain/community/retrievers/supabase";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { formatDocumentsAsString } from "langchain/util/document";
-import client from "@/lib/db/supabase";
+import { MongoDBAtlasVectorSearch } from "@langchain/mongodb";
 import prisma from '@/lib/db/prisma';
 import { env } from "@/lib/env";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { DocumentInterface } from "@langchain/core/documents";
+import { MongoClient } from "mongodb";
 
 export const formatVercelMessages = (chatHistory: VercelChatMessage[]) => {
     return chatHistory.map((message) => {
@@ -22,40 +22,46 @@ export const formatVercelMessages = (chatHistory: VercelChatMessage[]) => {
     }).join("\n");
 };
 
-export const getSupabaseRetriever = () => {
 
-    if (!env.OPENAI_API_KEY) {
-        throw new Error('OPENAI_API_KEY is not set in the environment');
-    }
+export async function getVectorStore() {
+    const client = new MongoClient(env.DIRECTED_DATABASE_URL || "");
+    const collection = client
+        .db(env.MONGODB_ATLAS_DB_NAME)
+        .collection("vector_documents");
 
     const embeddings = new OpenAIEmbeddings({
         modelName: "text-embedding-ada-002",
-        openAIApiKey: env.OPENAI_API_KEY,
     });
 
-    return new SupabaseHybridSearch(embeddings, {
-        client,
-        similarityK: 3,
-        keywordK: 3,
-        tableName: "documents",
-        similarityQueryName: "match_documents",
-        keywordQueryName: "kw_match_documents",
+    return new MongoDBAtlasVectorSearch(embeddings, {
+        collection: collection,
+        indexName: "vector_index",
+        textKey: "text",
+        embeddingKey: "embedding",
     });
-};
+}
 
-export const getRelevantDocuments = async (content: string, chatSessionId: string): Promise<DocumentInterface[]> => {
+
+export async function getRelevantDocuments(content: string, chatSessionId: string): Promise<DocumentInterface[]> {
     try {
-        const retriever = getSupabaseRetriever();
-        const documents = await retriever.invoke(content);
-        return documents.filter(doc => {
-            const docChatSessionIds = doc.metadata?.chatSessionIds;
-            return Array.isArray(docChatSessionIds) && docChatSessionIds.includes(chatSessionId);
+        const vectorStore = await getVectorStore();
+
+        const embeddings = new OpenAIEmbeddings({
+            modelName: "text-embedding-ada-002",
         });
+
+        const filter = {
+            chatSessionId: chatSessionId
+        };
+
+        const searchResults = await vectorStore.similaritySearch(content, 5, filter);
+
+        return searchResults;
     } catch (error) {
         console.error('Error retrieving relevant documents:', error);
         throw error;
     }
-};
+}
 
 export const storeMessage = async (chatId: string, role: 'user' | 'assistant', content: string, userId?: string) => {
     return prisma.chatMessage.create({

@@ -10,7 +10,7 @@ import { formatVercelMessages, getRelevantDocuments, storeMessage, getChatHistor
 import { env } from "@/lib/env";
 import { formatDocumentsAsString } from 'langchain/util/document';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 
 
 const CONDENSE_QUESTION_TEMPLATE = `Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
@@ -118,7 +118,7 @@ export async function POST(req: Request, res: Response) {
 
 
             const result = await streamText({
-                model: openai('gpt-3.5-turbo'),
+                model: openai("gpt-3.5-turbo"),
                 messages: convertToCoreMessages([
                     {
                         role: 'system',
