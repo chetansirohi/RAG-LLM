@@ -1,12 +1,8 @@
 import { auth } from "@/lib/auth";
-import { generateFileName, getSignedURL, saveFileRecord, markFileAsProcessed } from "@/lib/backendUtils";
+import { generateFileName, getSignedURL, saveFileRecord, markFileAsProcessed, getVectorStore } from "@/lib/backendUtils";
 import { WebPDFLoader } from "langchain/document_loaders/web/pdf";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
-import { OpenAIEmbeddings } from "@langchain/openai";
-import { SupabaseVectorStore } from "langchain/vectorstores/supabase";
-import client from "@/lib/db/supabase";
-import { env } from "@/lib/env";
-import crypto from "crypto"; // Moved here for server-side usage
+import crypto from "crypto";
 
 export async function POST(req: Request) {
     try {
@@ -68,21 +64,35 @@ export async function POST(req: Request) {
         });
         const splitDocs = await splitter.splitDocuments(docs);
 
-        const texts = splitDocs.map(doc => doc.pageContent);
-        const metadatas = splitDocs.map(doc => ({
-            ...doc.metadata,
-            secureToken: secureToken,
-            user_id: session.user.id,
-            chatSessionIds: [chatSessionId],
-        }));
+        const vectorStore = await getVectorStore();
+        console.log(vectorStore)
 
-        const embeddings = new OpenAIEmbeddings({ modelName: "text-embedding-ada-002", openAIApiKey: env.OPENAI_API_KEY });
-        await SupabaseVectorStore.fromTexts(
-            texts,
-            metadatas,
-            embeddings,
-            { client, tableName: "documents", queryName: "match_documents" }
-        );
+        await vectorStore.addDocuments(splitDocs.map(doc => ({
+            pageContent: doc.pageContent,
+            metadata: {
+                ...doc.metadata,
+                secureToken: secureToken,
+                userId: session.user.id,
+                chatSessionId: chatSessionId,
+            },
+        })));
+
+
+        // const texts = splitDocs.map(doc => doc.pageContent);
+        // const metadatas = splitDocs.map(doc => ({
+        //     ...doc.metadata,
+        //     secureToken: secureToken,
+        //     user_id: session.user.id,
+        //     chatSessionIds: [chatSessionId],
+        // }));
+
+        // const embeddings = new OpenAIEmbeddings({ modelName: "text-embedding-ada-002", openAIApiKey: env.OPENAI_API_KEY });
+        // await SupabaseVectorStore.fromTexts(
+        //     texts,
+        //     metadatas,
+        //     embeddings,
+        //     { client, tableName: "documents", queryName: "match_documents" }
+        // );
 
         // Mark the file as processed in DB
         await markFileAsProcessed(secureToken);
