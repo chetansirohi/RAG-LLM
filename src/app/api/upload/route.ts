@@ -59,13 +59,13 @@ export async function POST(req: Request) {
         const docs = await loader.load();
 
         const splitter = new RecursiveCharacterTextSplitter({
-            chunkSize: 1800,
-            chunkOverlap: 300,
+            chunkSize: 700,
+            chunkOverlap: 100,
         });
         const splitDocs = await splitter.splitDocuments(docs);
 
         const vectorStore = await getVectorStore();
-        console.log(vectorStore)
+        // console.log(vectorStore)
 
         await vectorStore.addDocuments(splitDocs.map(doc => ({
             pageContent: doc.pageContent,
@@ -76,23 +76,6 @@ export async function POST(req: Request) {
                 chatSessionId: chatSessionId,
             },
         })));
-
-
-        // const texts = splitDocs.map(doc => doc.pageContent);
-        // const metadatas = splitDocs.map(doc => ({
-        //     ...doc.metadata,
-        //     secureToken: secureToken,
-        //     user_id: session.user.id,
-        //     chatSessionIds: [chatSessionId],
-        // }));
-
-        // const embeddings = new OpenAIEmbeddings({ modelName: "text-embedding-ada-002", openAIApiKey: env.OPENAI_API_KEY });
-        // await SupabaseVectorStore.fromTexts(
-        //     texts,
-        //     metadatas,
-        //     embeddings,
-        //     { client, tableName: "documents", queryName: "match_documents" }
-        // );
 
         // Mark the file as processed in DB
         await markFileAsProcessed(secureToken);

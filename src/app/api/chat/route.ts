@@ -64,7 +64,7 @@ export async function POST(req: Request, res: Response) {
         const chatHistory = await getChatHistory(chatId);
 
         const model = new ChatOpenAI({
-            temperature: 0.7,
+            temperature: 0.384527,
             modelName: "gpt-3.5-turbo",
             openAIApiKey: env.OPENAI_API_KEY,
         });
