@@ -12,35 +12,39 @@ import { formatDocumentsAsString } from 'langchain/util/document';
 
 export const runtime = 'nodejs';
 
+const CONDENSE_QUESTION_TEMPLATE = `Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question that captures the context of the conversation. If the follow up question is already standalone, return it as is.
 
-const CONDENSE_QUESTION_TEMPLATE = `Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
+Chat History:
+{chat_history}
 
-<chat_history>
-  {chat_history}
-</chat_history>
-
-Follow Up Input: {question}
+Follow Up Question: {question}
 Standalone question:`;
 const condenseQuestionPrompt = PromptTemplate.fromTemplate(
     CONDENSE_QUESTION_TEMPLATE,
 );
 
-const ANSWER_TEMPLATE = `You are an artificial intelligent pdf loader and parser question answer chatbot, when the user uploads a pdf file you load the pdf file and parse through its contents and answer the user's questions based on the contents of the pdf file. You do not make answers on your own rather you answer based on the provided content, if you dont know the answers to user's questions you will tell them that you dont know the answer.
 
-<context>
-  {context}
-</context>
+const ANSWER_TEMPLATE = `You are an AI assistant specialized in analyzing and answering questions about PDF documents. Your primary function is to provide accurate information based solely on the content of the uploaded PDF files. Follow these guidelines:
 
-<chat_history>
-    {chat_history}
-</chat_history>
+1. Use only the information from the given context and chat history to answer the question.
+2. If the context doesn't contain relevant information to answer the question, respond with "I don't have enough information from the uploaded PDF to answer that question accurately."
+3. Maintain a consistent and professional tone throughout the conversation.
+4. If appropriate, refer back to previous parts of the conversation to provide continuity.
+5. Do not make up or infer information that is not present in the provided context.
 
-User's Question: {question}`;
+Context (PDF content):
+{context}
+
+Chat History:
+{chat_history}
+
+User's Question: {question}
+AI Assistant's Answer:`;
 
 const answerPrompt = PromptTemplate.fromTemplate(ANSWER_TEMPLATE);
 
 
-export async function POST(req: Request, res: Response) {
+export async function POST(req: Request) {
     try {
         const body = await req.json();
         const messages = body.messages ?? [];
@@ -58,20 +62,22 @@ export async function POST(req: Request, res: Response) {
         }
 
         const relevantDocuments = await getRelevantDocuments(currentMessageContent, chatId);
-        console.log('Retrieved documents:', relevantDocuments);
         const formattedDocuments = formatDocumentsAsString(relevantDocuments);
-        console.log('Formatted documents:', formattedDocuments);
-        const chatHistory = await getChatHistory(chatId);
+        // console.log('Formatted documents:', formattedDocuments);
+
+        // const chatHistory = await getChatHistory(chatId);
 
         const model = new ChatOpenAI({
             temperature: 0.384527,
             modelName: "gpt-3.5-turbo",
             openAIApiKey: env.OPENAI_API_KEY,
         });
-        // console.log("Model initialized successfully");
-
 
         const standaloneQuestionChain = RunnableSequence.from([
+            {
+                question: (input) => input.question,
+                chat_history: (input) => input.chat_history,
+            },
             condenseQuestionPrompt,
             model,
             new StringOutputParser(),
@@ -82,23 +88,28 @@ export async function POST(req: Request, res: Response) {
 
         const answerChain = RunnableSequence.from([
             {
-                context: (input) => formattedDocuments,
+                context: (input) => input.context,
                 chat_history: (input) => input.chat_history,
                 question: (input) => input.question,
             },
             answerPrompt,
             model,
+            new StringOutputParser(),
         ]);
 
         const conversationalRetrievalQAChain = RunnableSequence.from([
             {
-                question: standaloneQuestionChain,
+                standalone_question: standaloneQuestionChain,
+                context: async (input) => {
+                    const relevantDocs = await getRelevantDocuments(input.question, input.chatId);
+                    return formatDocumentsAsString(relevantDocs);
+                },
                 chat_history: (input) => input.chat_history,
+                original_question: (input) => input.question,
             },
             answerChain,
             new BytesOutputParser(),
         ]);
-
 
         let botResponse = '';
 
@@ -107,10 +118,8 @@ export async function POST(req: Request, res: Response) {
             const systemContent = await conversationalRetrievalQAChain.invoke({
                 question: currentMessageContent,
                 chat_history: formatVercelMessages(formattedPreviousMessages),
+                chatId: chatId,
             });
-
-            // console.log('System content type:', typeof systemContent);
-            // console.log('System content:', systemContent);
 
             const decodedSystemContent = systemContent instanceof Uint8Array
                 ? new TextDecoder().decode(systemContent)
@@ -134,7 +143,6 @@ export async function POST(req: Request, res: Response) {
                 }
             });
 
-            // console.log("Stream completed successfully");
             return result.toDataStreamResponse();
         } catch (error) {
             console.error("Error in streamText or chain invocation:", error);
