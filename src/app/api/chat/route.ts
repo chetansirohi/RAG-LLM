@@ -135,7 +135,7 @@ export async function POST(req: Request) {
                     },
                     ...messages
                 ]),
-                temperature: 0.7,
+                temperature: 0.384527,
                 onFinish: async ({ text }) => {
                     botResponse = text;
                     await storeMessage(chatId, 'user', currentMessageContent, session?.user.id);
