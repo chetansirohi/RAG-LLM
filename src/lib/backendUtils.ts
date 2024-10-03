@@ -46,15 +46,17 @@ export async function getRelevantDocuments(content: string, chatSessionId: strin
     try {
         const vectorStore = await getVectorStore();
 
-        const embeddings = new OpenAIEmbeddings({
-            modelName: "text-embedding-ada-002",
-        });
-
         const filter = {
             chatSessionId: chatSessionId
         };
 
-        const searchResults = await vectorStore.similaritySearch(content, 5, filter);
+        // const searchResults = await vectorStore.similaritySearch(content, 10, filter);
+        const searchResults = await vectorStore.maxMarginalRelevanceSearch(content, {
+            k: 3,
+            fetchK: 5,
+            lambda: 0.4,
+            filter: filter
+        });
 
         return searchResults;
     } catch (error) {
@@ -62,6 +64,8 @@ export async function getRelevantDocuments(content: string, chatSessionId: strin
         throw error;
     }
 }
+
+
 
 export const storeMessage = async (chatId: string, role: 'user' | 'assistant', content: string, userId?: string) => {
     return prisma.chatMessage.create({
