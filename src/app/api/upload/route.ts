@@ -66,7 +66,6 @@ export async function POST(req: Request) {
         const splitDocs = await splitter.splitDocuments(docs);
 
         const vectorStore = await getVectorStore();
-        // console.log(vectorStore)
 
         await vectorStore.addDocuments(splitDocs.map(doc => ({
             pageContent: doc.pageContent,

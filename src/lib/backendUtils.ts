@@ -50,7 +50,6 @@ export async function getRelevantDocuments(content: string, chatSessionId: strin
             chatSessionId: chatSessionId
         };
 
-        // const searchResults = await vectorStore.similaritySearch(content, 10, filter);
         const searchResults = await vectorStore.maxMarginalRelevanceSearch(content, {
             k: 3,
             fetchK: 5,
@@ -137,3 +136,59 @@ export async function markFileAsProcessed(secureToken: string) {
         data: { isProcessed: true },
     });
 }
+
+
+
+// const CONDENSE_QUESTION_TEMPLATE = `Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
+
+// <chat_history>
+//   {chat_history}
+// </chat_history>
+
+// Follow Up Input: {question}
+// Standalone question:`;
+
+
+// const ANSWER_TEMPLATE = `You are an artificial intelligent pdf loader and parser question answer chatbot, when the user uploads a pdf file you load the pdf file and parse through its contents and answer the user's questions based on the contents of the pdf file. You do not make answers on your own rather you answer based on the provided content, if you dont know the answers to user's questions you will tell them that you dont know the answer.
+
+// <context>
+//   {context}
+// </context>
+
+// <chat_history>
+//     {chat_history}
+// </chat_history>
+
+// User's Question: {question}`;
+
+
+// const standaloneQuestionChain = RunnableSequence.from([
+//     condenseQuestionPrompt,
+//     model,
+//     new StringOutputParser(),
+// ]);
+
+// const answerChain = RunnableSequence.from([
+//     {
+//         context: (input) => formattedDocuments,
+//         chat_history: (input) => input.chat_history,
+//         question: (input) => input.question,
+//     },
+//     answerPrompt,
+//     model,
+// ]);
+
+// const conversationalRetrievalQAChain = RunnableSequence.from([
+//     {
+//         question: standaloneQuestionChain,
+//         chat_history: (input) => input.chat_history,
+//     },
+//     answerChain,
+//     new BytesOutputParser(),
+// ]);
+
+
+// const systemContent = await conversationalRetrievalQAChain.invoke({
+//     question: currentMessageContent,
+//     chat_history: formatVercelMessages(formattedPreviousMessages),
+// });
