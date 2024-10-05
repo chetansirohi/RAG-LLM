@@ -53,7 +53,7 @@ export async function getRelevantDocuments(content: string, chatSessionId: strin
         const searchResults = await vectorStore.maxMarginalRelevanceSearch(content, {
             k: 3,
             fetchK: 5,
-            lambda: 0.4,
+            lambda: 0.6,
             filter: filter
         });
 

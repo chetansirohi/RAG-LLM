@@ -55,13 +55,14 @@ export async function POST(req: Request) {
             throw new Error(`Failed to load file from S3: ${response.statusText}`);
         }
         const fileBlob = await response.blob();
-        const loader = new WebPDFLoader(fileBlob, { parsedItemSeparator: "", splitPages: false });
+        const loader = new WebPDFLoader(fileBlob, { parsedItemSeparator: "\n", splitPages: true });
         const docs = await loader.load();
 
         const splitter = new RecursiveCharacterTextSplitter({
             chunkSize: 1200,
             chunkOverlap: 200,
-            separators: ["\n\n", "\n", " ", ""],
+            separators: ["\n\n", "\n", ".", "!", "?", ",", " ", ""],
+            lengthFunction: (text) => text.length,
         });
         const splitDocs = await splitter.splitDocuments(docs);
 
