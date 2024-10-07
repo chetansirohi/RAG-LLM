@@ -34,7 +34,7 @@ export default function Footer() {
             <FontAwesomeIcon icon={faTwitter} size="lg" />{" "}
           </a>
           <a
-            href="https://www.linkedin.com/in/chetan-sirohi-29974b169/"
+            href="https://www.linkedin.com/in/chetan-sirohi/"
             className="mx-2"
             target="_blank"
             rel="noopener noreferrer"
